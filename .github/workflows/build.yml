@@ -102,6 +102,13 @@ jobs:
       - name: تجهيز المنصات
         run: bash tool/prepare_platforms.sh
 
+      # أخطاء التحليل تظهر كتنبيهات (annotations) في صفحة البناء
+      - name: تحليل الكود
+        run: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1 || true
+          grep -E "^ *error" analyze.txt | head -40 | while IFS= read -r l; do echo "::error::$l"; done
+          grep -qE "^ *error" analyze.txt && exit 1 || true
+
       - name: بناء APK
         run: flutter build apk --release --dart-define=SITE_URL=$SITE_URL
 
