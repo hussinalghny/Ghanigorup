@@ -148,6 +148,7 @@ async function viewHome() {
       <a class="banner" href="#/kits">${hero ? `<img src="${h(hero)}" alt="">` : ''}
         <div class="t"><div><small>${h((S.settings.company_name || 'GHANI GROUP').toUpperCase())} · FILM PRODUCTION</small><h3>أسطول وطاقم فني<br>من التحضير حتى التسليم</h3></div><span class="go">${I.arrow}</span></div></a>
     </section>
+    ${installCard()}
     <div class="sec"><h2>الأقسام</h2><a href="#/browse">عرض الكل</a></div>
     <div class="deps">${cats.data.map(c => `<a class="dp" href="#/browse?cat=${h(c.slug)}"><div class="ph"><img src="${h(c.image || '')}" alt=""></div>${h(c.name_ar)}<small>${c.count} معدة</small></a>`).join('')}</div>
     <div class="sec"><h2>الأكثر طلباً</h2><a href="#/browse">عرض الكل</a></div>
@@ -157,6 +158,7 @@ async function viewHome() {
   </div>`;
   bindCards(app, [...feat.data, ...neu.data]);
   bindKits(kits.data);
+  bindInstall();
   $('#homeSearch').onsubmit = e => { e.preventDefault(); location.hash = '#/browse?q=' + encodeURIComponent(e.target.q.value.trim()); };
 }
 
@@ -487,6 +489,47 @@ async function viewTrack(params) {
   $('#tB').onclick = go;
   $('#tf').onsubmit = e => { e.preventDefault(); go(); };
   if (params.get('ref') && last.phone) go();
+}
+
+/* ---------------- تثبيت التطبيق على الشاشة الرئيسية (PWA) ---------------- */
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; const c = $('#installCard'); if (c) c.hidden = false; });
+window.addEventListener('appinstalled', () => { deferredPrompt = null; const c = $('#installCard'); if (c) c.remove(); toast('تم تثبيت التطبيق ✓'); });
+
+function installCard() {
+  if (isStandalone() || store.get('install_dismissed', 0) > Date.now()) return '';
+  const canShow = isIOS() || deferredPrompt;
+  return `<div class="install" id="installCard" ${canShow ? '' : 'hidden'}>
+    <img class="ic" src="assets/brand/icon-192.png" alt="">
+    <div><b>ثبّت تطبيق Ghani Group</b><small>على شاشتك الرئيسية — يفتح مثل أي تطبيق وبدون متجر</small></div>
+    <div class="act"><button id="installBtn">تثبيت</button><button class="x" id="installX" aria-label="إغلاق">×</button></div></div>`;
+}
+function bindInstall() {
+  const btn = $('#installBtn');
+  if (!btn) return;
+  $('#installX').onclick = () => { store.set('install_dismissed', Date.now() + 7 * 864e5); $('#installCard').remove(); };
+  btn.onclick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice.catch(() => null);
+      deferredPrompt = null;
+      return;
+    }
+    const share = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" stroke-width="2"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+    const plus = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
+    openSheet(`<img src="assets/brand/icon-192.png" alt="" style="width:72px;height:72px;border-radius:18px;margin:0 auto 14px;display:block">
+      <h3>تثبيت على الآيفون</h3><p>بدون متجر وبدون شهادة — خطوتين فقط:</p>
+      <div class="steps-ios">١. افتح الموقع من <b>Safari</b> واضغط زر المشاركة <span class="k">${share}</span> أسفل الشاشة<br>
+      ٢. اختر <b>إضافة إلى الشاشة الرئيسية</b> <span class="k">${plus}</span> ثم <b>إضافة</b></div>
+      <button class="btn lt" id="gotIt">تمام</button>`);
+    $('#gotIt').onclick = closeSheet;
+  };
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
 }
 
 /* ---------------- router ---------------- */

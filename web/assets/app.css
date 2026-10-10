@@ -17,7 +17,7 @@ img{display:block;max-width:100%}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:8px}
 
 /* ---------- header ---------- */
-.top{position:sticky;top:0;z-index:50;background:rgba(242,240,235,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.top{position:sticky;top:0;z-index:50;padding-top:env(safe-area-inset-top);background:rgba(242,240,235,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .top-in{max-width:var(--wrap);margin:0 auto;padding:12px var(--gut);display:flex;align-items:center;gap:14px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
 .logo img{width:30px;height:30px;object-fit:contain}
@@ -218,6 +218,19 @@ img{display:block;max-width:100%}
 .contact .row{display:flex;gap:8px;margin-top:16px}
 .contact .row a{flex:1;height:44px;border-radius:14px;background:#fff;color:var(--ink);font-size:13px;font-weight:600;display:grid;place-items:center}
 .contact .row a+a{background:#2a2a2a;color:#fff}
+
+/* ---------- install (PWA) ---------- */
+.install{margin-top:22px;background:var(--ink);color:#fff;border-radius:24px;padding:16px;display:flex;gap:14px;align-items:center}
+.install .ic{width:52px;height:52px;border-radius:14px;flex:none;object-fit:cover}
+.install b{display:block;font-size:15px;font-weight:600}
+.install small{color:#aaa;font-size:12px;line-height:1.6;display:block;margin-top:2px}
+.install .act{margin-inline-start:auto;display:flex;gap:6px;flex:none}
+.install button{height:38px;padding:0 14px;border-radius:12px;background:#fff;color:var(--ink);font-size:13px;font-weight:600}
+.install button.x{background:transparent;color:#888;padding:0 8px;font-size:18px}
+.steps-ios{text-align:right;background:var(--bg);border-radius:18px;padding:16px;margin:4px 0 6px;font-size:14px;line-height:2.1}
+.steps-ios b{font-weight:600}
+.steps-ios .k{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--sf);vertical-align:middle;margin:0 4px}
+@media (display-mode: standalone){ .install{display:none!important} body{-webkit-user-select:none;user-select:none} input,textarea{-webkit-user-select:text;user-select:text} }
 
 /* ---------- footer ---------- */
 .foot{max-width:var(--wrap);margin:60px auto 0;padding:30px var(--gut) 40px;border-top:1px solid var(--line);color:var(--mut);font-size:12.5px;line-height:2;display:grid;gap:18px}

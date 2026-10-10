@@ -22,9 +22,16 @@ ServerSignature Off
   RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
 <IfModule mod_headers.c>
   Header always unset X-Powered-By
-  <FilesMatch "\.(css|js|jpg|jpeg|png|webp|svg|woff2)$">
+  <FilesMatch "^(sw\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <FilesMatch "^(?!sw\.js$).*\.(css|js|jpg|jpeg|png|webp|svg|woff2)$">
     Header set Cache-Control "public, max-age=2592000, immutable"
   </FilesMatch>
 </IfModule>
