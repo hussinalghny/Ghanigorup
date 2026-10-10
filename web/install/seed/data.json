@@ -1,0 +1,1212 @@
+{
+ "version": 1,
+ "source": "Ghani Group catalog 2025",
+ "categories": [
+  {
+   "slug": "cam",
+   "name_ar": "كاميرات",
+   "name_en": "Cameras",
+   "image": "alexa.jpg",
+   "sort": 1
+  },
+  {
+   "slug": "lens",
+   "name_ar": "عدسات",
+   "name_en": "Lenses",
+   "image": "gmaster.jpg",
+   "sort": 2
+  },
+  {
+   "slug": "light",
+   "name_ar": "إضاءة",
+   "name_en": "Lighting",
+   "image": "s60.jpg",
+   "sort": 3
+  },
+  {
+   "slug": "grip",
+   "name_ar": "Grip وحركة",
+   "name_en": "Grip",
+   "image": "ronin.jpg",
+   "sort": 4
+  },
+  {
+   "slug": "video",
+   "name_ar": "مونيتر ونقل",
+   "name_en": "Monitoring",
+   "image": "smallhd7tx.jpg",
+   "sort": 5
+  },
+  {
+   "slug": "stand",
+   "name_ar": "ستاندات",
+   "name_en": "Stands",
+   "image": "cstand.jpg",
+   "sort": 6
+  },
+  {
+   "slug": "air",
+   "name_ar": "تصوير جوي",
+   "name_en": "Drones",
+   "image": "inspire.jpg",
+   "sort": 7
+  },
+  {
+   "slug": "truck",
+   "name_ar": "Cinemobile",
+   "name_en": "Trucks & Power",
+   "image": "truckred.jpg",
+   "sort": 8
+  }
+ ],
+ "equipment": [
+  {
+   "category": "cam",
+   "slug": "arri-alexa-mini",
+   "brand": "ARRI",
+   "name": "ALEXA Mini",
+   "qty": 2,
+   "image": "alexa.jpg",
+   "specs": {
+    "الحساس": "Super 35",
+    "الدقة": "3.4K",
+    "التسجيل": "ARRIRAW / ProRes",
+    "المونت": "PL"
+   },
+   "description": "معيار صناعة السينما. جسم صغير وخفيف يناسب الجيمبل والدولي والكتف، بألوان ARRI المعروفة.",
+   "featured": true,
+   "is_new": false
+  },
+  {
+   "category": "cam",
+   "slug": "canon-eos-c500-mark-ii",
+   "brand": "Canon",
+   "name": "EOS C500 Mark II",
+   "qty": 1,
+   "image": "c500.jpg",
+   "specs": {
+    "الحساس": "Full Frame",
+    "الدقة": "5.9K",
+    "التسجيل": "Cinema RAW Light",
+    "المونت": "EF / PL"
+   },
+   "description": "Full Frame بتسجيل RAW داخلي، مرنة للإعلانات والإنتاجات المتوسطة.",
+   "featured": true,
+   "is_new": false
+  },
+  {
+   "category": "cam",
+   "slug": "canon-eos-c200",
+   "brand": "Canon",
+   "name": "EOS C200",
+   "qty": 1,
+   "image": "c200.jpg",
+   "specs": {
+    "الحساس": "Super 35",
+    "الدقة": "4K",
+    "التسجيل": "RAW Light",
+    "المونت": "EF"
+   },
+   "description": "خيار عملي للوثائقي والمحتوى.",
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "cam",
+   "slug": "blackmagic-ursa-mini-pro-4-6k",
+   "brand": "Blackmagic",
+   "name": "URSA Mini Pro 4.6K",
+   "qty": 1,
+   "image": "ursa.jpg",
+   "specs": {
+    "الحساس": "Super 35",
+    "الدقة": "4.6K",
+    "التسجيل": "Blackmagic RAW"
+   },
+   "description": "كاميرا برودكاست وسينما بأزرار فيزيائية كاملة.",
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "cam",
+   "slug": "sony-fx3-cinema-line",
+   "brand": "Sony",
+   "name": "FX3 Cinema Line",
+   "qty": 1,
+   "image": "fx3.jpg",
+   "specs": {
+    "الحساس": "Full Frame",
+    "الدقة": "4K 120p",
+    "المونت": "E"
+   },
+   "description": "صغيرة جداً، مثالية للجيمبل وتصوير السيارات.",
+   "featured": true,
+   "is_new": false
+  },
+  {
+   "category": "lens",
+   "slug": "arri-master-prime-set",
+   "brand": "ARRI / Zeiss",
+   "name": "Master Prime Set",
+   "qty": 1,
+   "image": "masterprime.jpg",
+   "specs": {
+    "المونت": "PL",
+    "العدسات": "18 · 25 · 35 · 50 · 75 · 100",
+    "الفتحة": "T1.3"
+   },
+   "description": "أعلى حدة وأقل تشوّه — طقم من 6 عدسات.",
+   "featured": true,
+   "is_new": false
+  },
+  {
+   "category": "lens",
+   "slug": "arri-ultra-prime-set",
+   "brand": "ARRI / Zeiss",
+   "name": "Ultra Prime Set",
+   "qty": 1,
+   "image": "ultraprime.jpg",
+   "specs": {
+    "المونت": "PL",
+    "العدسات": "16 · 24 · 40 · 65 · 100",
+    "الفتحة": "T1.9"
+   },
+   "description": "طقم من 5 عدسات بخفة وزن مناسبة للجيمبل.",
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "lens",
+   "slug": "canon-cn-e-cinema-primes",
+   "brand": "Canon",
+   "name": "CN-E Cinema Primes",
+   "qty": 1,
+   "image": "canonef.jpg",
+   "specs": {
+    "المونت": "EF",
+    "العدسات": "14 · 24 · 35 · 50 · 85 · 135"
+   },
+   "description": "طقم من 6 عدسات سينمائية.",
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "lens",
+   "slug": "sony-g-master-zooms",
+   "brand": "Sony",
+   "name": "G Master Zooms",
+   "qty": 1,
+   "image": "gmaster.jpg",
+   "specs": {
+    "المونت": "E",
+    "العدسات": "16-35 · 24-70 · 70-200",
+    "الفتحة": "f/2.8"
+   },
+   "description": "ثلاث عدسات زوم من سلسلة G Master.",
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "lens",
+   "slug": "sony-g-master-primes",
+   "brand": "Sony",
+   "name": "G Master Primes",
+   "qty": 1,
+   "image": "gmaster.jpg",
+   "specs": {
+    "المونت": "E",
+    "العدسات": "14 · 35 · 50 · 85"
+   },
+   "description": "أربع عدسات ثابتة.",
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-m18-hmi",
+   "brand": "ARRI",
+   "name": "M18 HMI",
+   "qty": 2,
+   "image": "m18.jpg",
+   "specs": {
+    "القدرة": "1800W",
+    "النوع": "HMI",
+    "الحرارة": "5600K"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-m40-hmi",
+   "brand": "ARRI",
+   "name": "M40 HMI",
+   "qty": 2,
+   "image": "m40.jpg",
+   "specs": {
+    "القدرة": "4000W",
+    "النوع": "HMI",
+    "الحرارة": "5600K"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-m90-hmi",
+   "brand": "ARRI",
+   "name": "M90 HMI",
+   "qty": 1,
+   "image": "m90.jpg",
+   "specs": {
+    "القدرة": "9000W",
+    "النوع": "HMI",
+    "الحرارة": "5600K"
+   },
+   "description": "أقوى وحدة في الأسطول — للمشاهد الخارجية واستبدال ضوء الشمس.",
+   "featured": true,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-hmi-1-2k-2-5k",
+   "brand": "ARRI",
+   "name": "HMI 1.2K / 2.5K",
+   "qty": 6,
+   "image": "m18.jpg",
+   "specs": {
+    "القدرة": "1200 – 2500W",
+    "النوع": "HMI Fresnel"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-tungsten-1k",
+   "brand": "ARRI",
+   "name": "Tungsten 1K",
+   "qty": 15,
+   "image": "tung1k.jpg",
+   "specs": {
+    "القدرة": "1000W",
+    "الحرارة": "3200K"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-tungsten-650",
+   "brand": "ARRI",
+   "name": "Tungsten 650",
+   "qty": 22,
+   "image": "tung650.jpg",
+   "specs": {
+    "القدرة": "650W",
+    "الحرارة": "3200K"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-tungsten-2k-5k",
+   "brand": "ARRI",
+   "name": "Tungsten 2K / 5K",
+   "qty": 5,
+   "image": "tung1k.jpg",
+   "specs": {
+    "القدرة": "2000 – 5000W",
+    "الحرارة": "3200K"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-skypanel-s60",
+   "brand": "ARRI",
+   "name": "SkyPanel S60",
+   "qty": 2,
+   "image": "s60.jpg",
+   "specs": {
+    "النوع": "LED Soft",
+    "اللون": "RGBW"
+   },
+   "description": null,
+   "featured": true,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-skypanel-s120",
+   "brand": "ARRI",
+   "name": "SkyPanel S120",
+   "qty": 2,
+   "image": "s120.jpg",
+   "specs": {
+    "النوع": "LED Soft",
+    "اللون": "RGBW"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-skypanel-s30",
+   "brand": "ARRI",
+   "name": "SkyPanel S30",
+   "qty": 3,
+   "image": "s60.jpg",
+   "specs": {
+    "النوع": "LED Soft",
+    "اللون": "RGBW"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "arri-skypanel-x",
+   "brand": "ARRI",
+   "name": "SkyPanel X",
+   "qty": 3,
+   "image": "skyx.jpg",
+   "specs": {
+    "النوع": "Modular LED",
+    "الحماية": "IP66"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "aputure-storm-1200x",
+   "brand": "Aputure",
+   "name": "STORM 1200x",
+   "qty": 2,
+   "image": "storm.jpg",
+   "specs": {
+    "القدرة": "1200W",
+    "النوع": "Bi-Color"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "nanlite-forza-500-300",
+   "brand": "Nanlite",
+   "name": "Forza 500 / 300",
+   "qty": 4,
+   "image": "forza.jpg",
+   "specs": {
+    "القدرة": "300 – 500W",
+    "المونت": "Bowens"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "kino-flo-select-s120",
+   "brand": "Kino Flo",
+   "name": "Select S120",
+   "qty": 10,
+   "image": "kino.jpg",
+   "specs": {
+    "النوع": "LED Soft",
+    "الحجم": "4ft"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "senna-masterpiece-100-100",
+   "brand": "Senna",
+   "name": "Masterpiece 100×100",
+   "qty": 1,
+   "image": "masterpiece.jpg",
+   "specs": {
+    "الحجم": "100×100cm",
+    "النوع": "LED Sky"
+   },
+   "description": "إضاءة سقفية ضخمة تُعلّق فوق الموقع.",
+   "featured": false,
+   "is_new": true
+  },
+  {
+   "category": "light",
+   "slug": "cineroid-flex-mat-100-100",
+   "brand": "Cineroid",
+   "name": "Flex Mat 100×100",
+   "qty": 2,
+   "image": "cineroid.jpg",
+   "specs": {
+    "الحجم": "100×100cm",
+    "النوع": "Flexible LED"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": true
+  },
+  {
+   "category": "light",
+   "slug": "pheon-lux-rgb-matrix",
+   "brand": "Pheon Lux",
+   "name": "RGB Matrix",
+   "qty": 1,
+   "image": "pheon.jpg",
+   "specs": {
+    "النوع": "RGB Matrix",
+    "اللون": "Full RGB"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": true
+  },
+  {
+   "category": "light",
+   "slug": "kelvin-epos-600",
+   "brand": "Kelvin",
+   "name": "Epos 600",
+   "qty": 1,
+   "image": "epos600.jpg",
+   "specs": {
+    "القدرة": "600W",
+    "اللون": "RGB"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": true
+  },
+  {
+   "category": "light",
+   "slug": "kelvin-epos-300",
+   "brand": "Kelvin",
+   "name": "Epos 300",
+   "qty": 1,
+   "image": "epos300.jpg",
+   "specs": {
+    "القدرة": "300W",
+    "اللون": "RGB"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": true
+  },
+  {
+   "category": "light",
+   "slug": "kelvin-play-hero",
+   "brand": "Kelvin",
+   "name": "Play Hero",
+   "qty": 1,
+   "image": "playhero.jpg",
+   "specs": {
+    "النوع": "Pocket LED",
+    "اللون": "RGB"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": true
+  },
+  {
+   "category": "light",
+   "slug": "astera-titan-helios-tubes",
+   "brand": "Astera",
+   "name": "Titan / Helios Tubes",
+   "qty": 28,
+   "image": "astera.jpg",
+   "specs": {
+    "الأطوال": "60 · 120 · 200cm",
+    "اللون": "RGB",
+    "التحكم": "Wireless"
+   },
+   "description": null,
+   "featured": true,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "aputure-accent-b7c",
+   "brand": "Aputure",
+   "name": "Accent B7C",
+   "qty": 19,
+   "image": "b7c.jpg",
+   "specs": {
+    "القاعدة": "E27",
+    "اللون": "RGBWW"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "aputure-mc-pocket-kit",
+   "brand": "Aputure",
+   "name": "MC Pocket Kit",
+   "qty": 12,
+   "image": "mc.jpg",
+   "specs": {
+    "النوع": "Pocket",
+    "اللون": "RGBWW"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "fomex-fc600-flex",
+   "brand": "Fomex",
+   "name": "FC600 Flex",
+   "qty": 3,
+   "image": "fomex.jpg",
+   "specs": {
+    "الحجم": "60cm",
+    "النوع": "Flexible"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "fomex-rolllite-200",
+   "brand": "Fomex",
+   "name": "RollLite 200",
+   "qty": 1,
+   "image": "rolllite.jpg",
+   "specs": {
+    "الحجم": "200cm",
+    "النوع": "Fabric LED"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "visio-cool-light-8-tube",
+   "brand": "Visio",
+   "name": "Cool Light 8-Tube",
+   "qty": 10,
+   "image": "visio.jpg",
+   "specs": {
+    "النوع": "Fluorescent"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "light",
+   "slug": "dedolight-dedo-kit",
+   "brand": "Dedolight",
+   "name": "Dedo Kit",
+   "qty": 4,
+   "image": "dedo.jpg",
+   "specs": {
+    "النوع": "Tungsten",
+    "الطقم": "4 رؤوس"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "dji-ronin-2",
+   "brand": "DJI",
+   "name": "Ronin 2",
+   "qty": 1,
+   "image": "ronin.jpg",
+   "specs": {
+    "النوع": "3-Axis Gimbal",
+    "الحمولة": "13.6kg"
+   },
+   "description": "جيمبل ثلاثي المحاور للكاميرات السينمائية الكاملة.",
+   "featured": true,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "easyrig-vario-5",
+   "brand": "Easyrig",
+   "name": "Vario 5",
+   "qty": 1,
+   "image": "easyrig.jpg",
+   "specs": {
+    "النوع": "Body Support",
+    "الحمولة": "5 – 17kg"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "movietech-4-4-dolly",
+   "brand": "MovieTech",
+   "name": "4×4 Dolly",
+   "qty": 1,
+   "image": "dolly4.jpg",
+   "specs": {
+    "النوع": "Dolly",
+    "العمود": "Hydraulic"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "movietech-4-2-dolly",
+   "brand": "MovieTech",
+   "name": "4×2 Dolly",
+   "qty": 1,
+   "image": "dolly2.jpg",
+   "specs": {
+    "النوع": "Dolly"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "movietech-track-20m-curve-12m",
+   "brand": "MovieTech",
+   "name": "Track 20m + Curve 12m",
+   "qty": 1,
+   "image": "track.jpg",
+   "specs": {
+    "المستقيم": "20m",
+    "المنحني": "12m"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "tilta-movie-cart-director",
+   "brand": "Tilta",
+   "name": "Movie Cart Director",
+   "qty": 1,
+   "image": "cart.jpg",
+   "specs": {
+    "الحمولة": "500kg"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "panther-steady-car-mount",
+   "brand": "Panther",
+   "name": "Steady Car Mount",
+   "qty": 1,
+   "image": "panther.jpg",
+   "specs": {
+    "النوع": "Car Mount"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "movietech-low-rig-set",
+   "brand": "MovieTech",
+   "name": "Low Rig Set",
+   "qty": 1,
+   "image": "lowrig.jpg",
+   "specs": {
+    "النوع": "Low Mode"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "grip-car-side-platform",
+   "brand": "Grip",
+   "name": "Car Side Platform",
+   "qty": 1,
+   "image": "carmount.jpg",
+   "specs": {
+    "النوع": "Car Mount"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "grip-suction-gimbal-mount",
+   "brand": "Grip",
+   "name": "Suction Gimbal Mount",
+   "qty": 1,
+   "image": "suction.jpg",
+   "specs": {
+    "النوع": "Car Mount"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "grip",
+   "slug": "segway-tracking-rig",
+   "brand": "Segway",
+   "name": "Tracking Rig",
+   "qty": 2,
+   "image": "segway.jpg",
+   "specs": {
+    "النوع": "Ground Tracking"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "desview-17in-4k-director-monitor",
+   "brand": "Desview",
+   "name": "17\" 4K Director Monitor",
+   "qty": 2,
+   "image": "desview.jpg",
+   "specs": {
+    "الحجم": "17\"",
+    "الشاشة": "IPS 4K"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "panasonic-17in-hd-sdi-monitor",
+   "brand": "Panasonic",
+   "name": "17\" HD-SDI Monitor",
+   "qty": 2,
+   "image": "panasonic.jpg",
+   "specs": {
+    "الحجم": "17\"",
+    "المدخل": "HD-SDI / HDMI"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "smallhd-7in-wireless-monitor",
+   "brand": "SmallHD",
+   "name": "7\" Wireless Monitor",
+   "qty": 1,
+   "image": "smallhd7tx.jpg",
+   "specs": {
+    "الحجم": "7\"",
+    "البث": "مدمج"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "smallhd-7in-on-camera",
+   "brand": "SmallHD",
+   "name": "7\" On-Camera",
+   "qty": 1,
+   "image": "smallhd7.jpg",
+   "specs": {
+    "الحجم": "7\""
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "smallhd-5in-on-camera",
+   "brand": "SmallHD",
+   "name": "5\" On-Camera",
+   "qty": 1,
+   "image": "smallhd5.jpg",
+   "specs": {
+    "الحجم": "5\""
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "vaxis-wireless-tx-rx",
+   "brand": "Vaxis",
+   "name": "Wireless TX / RX",
+   "qty": 2,
+   "image": "vaxis.jpg",
+   "specs": {
+    "المدخل": "SDI / HDMI"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "swit-wireless-tx-rx",
+   "brand": "SWIT",
+   "name": "Wireless TX / RX",
+   "qty": 2,
+   "image": "swit.jpg",
+   "specs": {
+    "المدخل": "SDI / HDMI"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "inno-wireless-tx-rx",
+   "brand": "Inno",
+   "name": "Wireless TX / RX",
+   "qty": 1,
+   "image": "innox.jpg",
+   "specs": {
+    "المدخل": "SDI / HDMI"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "tilta-nucleus-m-focus",
+   "brand": "Tilta",
+   "name": "Nucleus-M Focus",
+   "qty": 2,
+   "image": "nucleus.jpg",
+   "specs": {
+    "النوع": "Wireless Follow Focus"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "tilta-matte-box-4-5-65",
+   "brand": "Tilta",
+   "name": "Matte Box 4×5.65",
+   "qty": 2,
+   "image": "matte.jpg",
+   "specs": {
+    "الفلتر": "4×5.65"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "rosco-butterfly-frames",
+   "brand": "Rosco",
+   "name": "Butterfly Frames",
+   "qty": 7,
+   "image": "butterfly.jpg",
+   "specs": {
+    "المقاسات": "1×2 → 4×4m"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "video",
+   "slug": "matthews-flag-kit",
+   "brand": "Matthews",
+   "name": "Flag Kit",
+   "qty": 1,
+   "image": "flags.jpg",
+   "specs": {
+    "النوع": "Flags / Nets"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "stand",
+   "slug": "kupo-combo-stand",
+   "brand": "Kupo",
+   "name": "Combo Stand",
+   "qty": 30,
+   "image": "combo.jpg",
+   "specs": {
+    "الارتفاع": "340cm",
+    "الحمولة": "40kg"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "stand",
+   "slug": "kupo-c-stand",
+   "brand": "Kupo",
+   "name": "C-Stand",
+   "qty": 10,
+   "image": "cstand.jpg",
+   "specs": {
+    "الارتفاع": "250cm",
+    "الحمولة": "10kg"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "stand",
+   "slug": "kupo-c-stand-arm",
+   "brand": "Kupo",
+   "name": "C-Stand + Arm",
+   "qty": 4,
+   "image": "s11.jpg",
+   "specs": {
+    "الارتفاع": "328cm",
+    "الذراع": "102cm"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "stand",
+   "slug": "kupo-high-roller",
+   "brand": "Kupo",
+   "name": "High Roller",
+   "qty": 2,
+   "image": "highroller.jpg",
+   "specs": {
+    "الارتفاع": "610cm",
+    "الحمولة": "70kg"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "stand",
+   "slug": "kupo-crank-stand",
+   "brand": "Kupo",
+   "name": "Crank Stand",
+   "qty": 2,
+   "image": "crank.jpg",
+   "specs": {
+    "الارتفاع": "270cm",
+    "الحمولة": "80kg"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "stand",
+   "slug": "manfrotto-wind-up-stand",
+   "brand": "Manfrotto",
+   "name": "Wind-Up Stand",
+   "qty": 4,
+   "image": "s9.jpg",
+   "specs": {
+    "الارتفاع": "477cm",
+    "الحمولة": "40kg"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "stand",
+   "slug": "miller-tripod-heavy",
+   "brand": "Miller",
+   "name": "Tripod — Heavy",
+   "qty": 3,
+   "image": "tripod12.jpg",
+   "specs": {
+    "الرأس": "Fluid"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "stand",
+   "slug": "miller-tripod-video",
+   "brand": "Miller",
+   "name": "Tripod — Video",
+   "qty": 7,
+   "image": "tripod13.jpg",
+   "specs": {
+    "الرأس": "Fluid"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "air",
+   "slug": "dji-inspire-2-x7",
+   "brand": "DJI",
+   "name": "Inspire 2 + X7",
+   "qty": 1,
+   "image": "inspire.jpg",
+   "specs": {
+    "الكاميرا": "Zenmuse X7 / X5S",
+    "العدسات": "15 – 50mm",
+    "الدقة": "6K RAW"
+   },
+   "description": "درون سينمائي مع عدسات 16 · 24 · 35 · 50mm.",
+   "featured": true,
+   "is_new": false
+  },
+  {
+   "category": "air",
+   "slug": "dji-mavic-3-cine-pro",
+   "brand": "DJI",
+   "name": "Mavic 3 Cine / Pro",
+   "qty": 2,
+   "image": "mavic.jpg",
+   "specs": {
+    "الدقة": "5.1K",
+    "التسجيل": "ProRes 422 HQ"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "truck",
+   "slug": "mercedes-cinemobile-truck",
+   "brand": "Mercedes",
+   "name": "Cinemobile Truck",
+   "qty": 2,
+   "image": "truckred.jpg",
+   "specs": {
+    "النوع": "Grip & Electric"
+   },
+   "description": "شاحنة معدات مجهزة بالكامل ترافق الطاقم إلى الموقع.",
+   "featured": false,
+   "is_new": false
+  },
+  {
+   "category": "truck",
+   "slug": "perkins-45-kva-silent-generator",
+   "brand": "Perkins",
+   "name": "45 KVA Silent Generator",
+   "qty": 1,
+   "image": "gen.jpg",
+   "specs": {
+    "القدرة": "45 KVA",
+    "الوقود": "ديزل",
+    "الصوت": "صامتة"
+   },
+   "description": null,
+   "featured": false,
+   "is_new": false
+  }
+ ],
+ "kits": [
+  {
+   "slug": "feature-a-cam",
+   "name_ar": "باقة الفيلم السينمائي",
+   "name_en": "Feature A-Cam",
+   "image": "alexa.jpg",
+   "sort": 1,
+   "items": [
+    "arri-alexa-mini",
+    "arri-master-prime-set",
+    "dji-ronin-2",
+    "desview-17in-4k-director-monitor",
+    "tilta-nucleus-m-focus"
+   ]
+  },
+  {
+   "slug": "commercial",
+   "name_ar": "باقة الإعلان التجاري",
+   "name_en": "Commercial",
+   "image": "c500.jpg",
+   "sort": 2,
+   "items": [
+    "canon-eos-c500-mark-ii",
+    "canon-cn-e-cinema-primes",
+    "arri-skypanel-s60",
+    "astera-titan-helios-tubes",
+    "aputure-storm-1200x"
+   ]
+  },
+  {
+   "slug": "run-gun",
+   "name_ar": "الباقة الخفيفة",
+   "name_en": "Run & Gun",
+   "image": "fx3.jpg",
+   "sort": 3,
+   "items": [
+    "sony-fx3-cinema-line",
+    "sony-g-master-zooms",
+    "aputure-mc-pocket-kit",
+    "smallhd-7in-wireless-monitor"
+   ]
+  },
+  {
+   "slug": "aerial-unit",
+   "name_ar": "وحدة التصوير الجوي",
+   "name_en": "Aerial Unit",
+   "image": "inspire.jpg",
+   "sort": 4,
+   "items": [
+    "dji-inspire-2-x7",
+    "dji-mavic-3-cine-pro"
+   ]
+  }
+ ],
+ "settings": {
+  "company_name": "Ghani Group",
+  "company_name_ar": "مجموعة الغني للإنتاج الفني",
+  "address": "Al Saadoon Park, District 103, Street 11, Building 1, Baghdad",
+  "phone": "+964 78 4444 000 5",
+  "whatsapp": "9647844440005",
+  "email": "info@alghani-group.com",
+  "website": "https://ghanigroup.online",
+  "hero_image": "setphoto.jpg",
+  "show_prices": "0",
+  "app_latest_version": "1.0.0",
+  "app_min_version_ios": "1.0.0",
+  "app_min_version_android": "1.0.0",
+  "app_store_url": "",
+  "play_store_url": "https://play.google.com/store/apps/details?id=online.ghanigroup.app",
+  "maintenance_message": ""
+ }
+}

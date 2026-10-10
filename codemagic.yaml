@@ -1,0 +1,164 @@
+# Ghani Group — Codemagic CI/CD
+# ---------------------------------------------------------------------------
+# قبل أول تشغيل، من لوحة Codemagic (Teams ▸ Integrations / Code signing / Environment variables):
+#
+#  iOS
+#   1. Integrations ▸ Developer Portal ▸ أضف مفتاح App Store Connect API باسم:  GhaniGroup ASC
+#   2. أنشئ التطبيق في App Store Connect بالـ Bundle ID:  online.ghanigroup.app
+#      وضع رقمه (Apple ID) في APP_STORE_APPLE_ID أدناه.
+#
+#  Android
+#   3. Code signing identities ▸ Android keystores ▸ ارفع upload keystore باسم:  ghani_upload_keystore
+#   4. Environment variables ▸ مجموعة google_play فيها:
+#        GCLOUD_SERVICE_ACCOUNT_CREDENTIALS  (JSON حساب خدمة Google Play — Secure)
+#   5. أول ملف AAB يُرفع يدوياً من Play Console (Google لا تسمح بالرفع الآلي لأول إصدار)،
+#      بعدها كل البناءات تُرفع تلقائياً.
+#
+# التفاصيل الكاملة في docs/STORE_SUBMISSION.md
+# ---------------------------------------------------------------------------
+
+definitions:
+  ios_env: &ios_env
+    flutter: stable
+    xcode: latest            # Xcode 26 / iOS 26 SDK — إلزامي لرفع التطبيقات منذ نيسان 2026
+    cocoapods: default
+  android_env: &android_env
+    flutter: stable
+    java: 17
+
+  scripts:
+    - &prepare
+      name: تجهيز مجلدات المنصات (أيقونات، شاشة البداية، الإعدادات)
+      script: bash tool/prepare_platforms.sh
+    - &analyze
+      name: تحليل الكود
+      script: flutter analyze --no-fatal-infos --no-fatal-warnings
+    - &test
+      name: الاختبارات
+      script: flutter test
+
+  email: &email
+    email:
+      recipients:
+        - info@alghani-group.com
+      notify:
+        success: true
+        failure: true
+
+workflows:
+  # ===================================================================== iOS
+  ios-release:
+    name: iOS ▸ TestFlight / App Store
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    integrations:
+      app_store_connect: GhaniGroup ASC
+    environment:
+      <<: *ios_env
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: online.ghanigroup.app
+      vars:
+        APP_STORE_APPLE_ID: 0000000000          # ← ضع Apple ID للتطبيق من App Store Connect
+        SITE_URL: https://ghanigroup.online
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: "v*"
+    scripts:
+      - *prepare
+      - *analyze
+      - *test
+      - name: توليد Podfile وتثبيت Pods
+        script: flutter build ios --release --no-codesign --config-only --dart-define=SITE_URL=$SITE_URL
+      - name: إعداد ملفات التوقيع
+        script: xcode-project use-profiles
+      - name: بناء IPA
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          NEXT=$(( ${LATEST:-0} + 1 ))
+          [ "$NEXT" -lt "${BUILD_NUMBER:-1}" ] && NEXT=$BUILD_NUMBER
+          echo "Build number: $NEXT"
+          flutter build ipa --release \
+            --build-number=$NEXT \
+            --dart-define=SITE_URL=$SITE_URL \
+            --obfuscate --split-debug-info=build/debug-info/ios \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - build/debug-info/**
+      - flutter_drive.log
+    publishing:
+      <<: *email
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # بعد إضافة لقطات الشاشة وبيانات المتجر، غيّرها إلى true للإرسال للمراجعة تلقائياً
+        submit_to_app_store: false
+
+  # ================================================================= Android
+  android-release:
+    name: Android ▸ Google Play
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      <<: *android_env
+      android_signing:
+        - ghani_upload_keystore
+      groups:
+        - google_play
+      vars:
+        PACKAGE_NAME: online.ghanigroup.app
+        GOOGLE_PLAY_TRACK: internal
+        SITE_URL: https://ghanigroup.online
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: "v*"
+    scripts:
+      - *prepare
+      - *analyze
+      - *test
+      - name: بناء AAB
+        script: |
+          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo 0)
+          NEXT=$(( ${LATEST:-0} + 1 ))
+          [ "$NEXT" -lt "${BUILD_NUMBER:-1}" ] && NEXT=$BUILD_NUMBER
+          echo "Build number: $NEXT"
+          flutter build appbundle --release \
+            --build-number=$NEXT \
+            --dart-define=SITE_URL=$SITE_URL \
+            --obfuscate --split-debug-info=build/debug-info/android
+    artifacts:
+      - build/**/outputs/bundle/**/*.aab
+      - build/**/outputs/**/mapping.txt
+      - build/debug-info/**
+      - flutter_drive.log
+    publishing:
+      <<: *email
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: $GOOGLE_PLAY_TRACK
+        submit_as_draft: true
+
+  # ============================================== فحص سريع لكل Push / PR
+  checks:
+    name: فحص الكود
+    instance_type: linux_x2
+    max_build_duration: 20
+    environment:
+      flutter: stable
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: "*"
+    scripts:
+      - name: الحزم
+        script: flutter pub get
+      - *analyze
+      - *test

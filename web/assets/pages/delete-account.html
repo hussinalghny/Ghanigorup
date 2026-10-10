@@ -1,0 +1,36 @@
+<h1>حذف الحساب</h1>
+<p class="upd">{{COMPANY}} — Account deletion</p>
+
+<p>يمكنك حذف حسابك في تطبيق أو موقع {{COMPANY}} نهائياً من هذه الصفحة، أو من داخل التطبيق: <b>حسابي ← الحساب ← حذف الحساب</b>.</p>
+
+<div class="card">
+  <h2 style="margin-top:0">ما الذي يُحذف؟</h2>
+  <ul>
+    <li>بيانات الحساب: الاسم، البريد، الهاتف، الشركة، كلمة المرور — <b>تُحذف فوراً</b>.</li>
+    <li>المعدات المفضلة وكل جلسات الدخول على الأجهزة — <b>تُحذف فوراً</b>.</li>
+  </ul>
+  <h2>ما الذي نحتفظ به؟</h2>
+  <ul>
+    <li>سجلات طلبات الحجز السابقة (المعدات والتواريخ واسم ورقم المتصل) كسجل تجاري ومحاسبي لمدة أقصاها 5 سنوات، منفصلة عن أي حساب.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">تأكيد الحذف</h2>
+  <form id="delForm" autocomplete="off">
+    <label for="em">البريد الإلكتروني المسجّل</label>
+    <input id="em" name="email" type="email" dir="ltr" required>
+    <label for="pw">كلمة المرور</label>
+    <input id="pw" name="password" type="password" dir="ltr" required>
+    <label style="display:flex;gap:10px;align-items:center;color:var(--ink)"><input type="checkbox" id="cf" style="width:18px;height:18px"> أفهم أن الحذف نهائي ولا يمكن التراجع عنه</label>
+    <button type="submit" id="delBtn" disabled>حذف حسابي نهائياً</button>
+    <div class="msg" id="delMsg"></div>
+  </form>
+  <p style="font-size:13px;color:var(--mut);margin-top:16px">نسيت كلمة المرور؟ راسلنا من بريدك المسجّل على <a href="mailto:{{EMAIL}}?subject=Account%20deletion%20request">{{EMAIL}}</a> وسنحذف الحساب خلال 7 أيام بعد التحقق.</p>
+</div>
+
+<hr>
+<div class="en">
+<h2>Delete your {{COMPANY}} account</h2>
+<p>Enter your registered email and password above to permanently delete your account, or in the app go to Account → Profile → Delete account. Deleted immediately: name, email, phone, company, password, favorites and all sessions. Retained: past rental order records (equipment, dates, contact name/phone) for up to 5 years for business and accounting purposes, unlinked from any account. If you cannot sign in, email <a href="mailto:{{EMAIL}}">{{EMAIL}}</a> from your registered address and we will delete the account within 7 days.</p>
+</div>

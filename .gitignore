@@ -1,0 +1,27 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+.vscode/
+.DS_Store
+
+# مجلدات المنصات تُولَّد بـ tool/prepare_platforms.sh — نحتفظ فقط بملفاتنا
+/android/
+/ios/*
+!/ios/Runner/
+/ios/Runner/*
+!/ios/Runner/PrivacyInfo.xcprivacy
+
+# أسرار التوقيع — لا ترفعها أبداً
+*.jks
+*.keystore
+key.properties
+*.p8
+*.mobileprovision
+*.p12

@@ -1,0 +1,73 @@
+name: ghani_group
+description: "Ghani Group — تأجير معدات التصوير السينمائي"
+publish_to: "none"
+
+# version: <اسم الإصدار>+<رقم البناء>
+# Codemagic يزيد رقم البناء تلقائياً عند كل رفع (انظر codemagic.yaml)
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  http: ^1.2.2
+  provider: ^6.1.2
+  shared_preferences: ^2.3.3
+  flutter_secure_storage: ^9.2.2
+  cached_network_image: ^3.4.1
+  url_launcher: ^6.3.1
+  package_info_plus: ^8.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+  fonts:
+    - family: Alexandria
+      fonts:
+        - asset: assets/fonts/Alexandria-300.ttf
+          weight: 300
+        - asset: assets/fonts/Alexandria-400.ttf
+          weight: 400
+        - asset: assets/fonts/Alexandria-500.ttf
+          weight: 500
+        - asset: assets/fonts/Alexandria-600.ttf
+          weight: 600
+        - asset: assets/fonts/Alexandria-700.ttf
+          weight: 700
+
+# ---------- أيقونات التطبيق (تُولَّد بـ: dart run flutter_launcher_icons) ----------
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "brand/icon-1024.png"
+  remove_alpha_ios: true
+  min_sdk_android: 24
+  adaptive_icon_background: "#B82619"
+  adaptive_icon_foreground: "brand/adaptive-fg.png"
+  adaptive_icon_monochrome: "brand/adaptive-mono.png"
+
+# ---------- شاشة البداية (تُولَّد بـ: dart run flutter_native_splash:create) ----------
+flutter_native_splash:
+  color: "#B82619"
+  image: "brand/splash-logo.png"
+  android_12:
+    color: "#B82619"
+    image: "brand/splash-android12.png"
+    icon_background_color: "#B82619"
+  ios_content_mode: center
+  fullscreen: false
+  web: false

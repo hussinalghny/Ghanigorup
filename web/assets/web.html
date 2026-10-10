@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<base href="{{BASE}}">
+<title>Ghani Group — تأجير معدات التصوير السينمائي</title>
+<meta name="description" content="تأجير كاميرات وعدسات وإضاءة ومعدات Grip وتصوير جوي في بغداد — Ghani Group Film Production.">
+<meta name="theme-color" content="#F2F0EB">
+<meta property="og:image" content="assets/brand/icon-512.png">
+<link rel="icon" href="assets/brand/favicon-64.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css?v=1.1.2">
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a href="#/" class="logo" aria-label="Ghani Group">
+      <img src="assets/brand/mark.png" alt="" width="30" height="30">
+      <span>Ghani Group</span>
+    </a>
+    <nav class="top-nav">
+      <a href="#/" data-nav="home">الرئيسية</a>
+      <a href="#/browse" data-nav="browse">المعدات</a>
+      <a href="#/kits" data-nav="kits">الباقات</a>
+      <a href="#/track" data-nav="track">تتبع طلب</a>
+    </nav>
+    <form class="top-search" id="topSearch" role="search">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="9" r="6"/><path d="m14 14 4 4"/></svg>
+      <input name="q" placeholder="ابحث عن معدة…" autocomplete="off" aria-label="بحث">
+    </form>
+    <a href="#/account" class="icon-btn" aria-label="حسابي" id="accBtn">
+      <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="8" r="3.5"/><path d="M4 19c1.2-3.4 4-5 7-5s5.8 1.6 7 5"/></svg>
+    </a>
+    <a href="#/order" class="cart-btn" aria-label="الطلب">
+      <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 7h12l-1 12H6zM8 7a3 3 0 0 1 6 0"/></svg>
+      <span class="lbl">الطلب</span><i class="count" data-count>0</i>
+    </a>
+  </div>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<footer class="foot" id="foot"></footer>
+
+<nav class="bnav" id="bnav" aria-label="التنقل">
+  <a href="#/" data-nav="home"><svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10 11 3l8 7v9H3z"/></svg><span>الرئيسية</span></a>
+  <a href="#/browse" data-nav="browse"><svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="12" y="3" width="7" height="7" rx="2"/><rect x="3" y="12" width="7" height="7" rx="2"/><rect x="12" y="12" width="7" height="7" rx="2"/></svg><span>تصفّح</span></a>
+  <a href="#/order" data-nav="order"><i class="count" data-count>0</i><svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 7h12l-1 12H6zM8 7a3 3 0 0 1 6 0"/></svg><span>الطلب</span></a>
+  <a href="#/account" data-nav="account"><svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="8" r="3.5"/><path d="M4 19c1.2-3.4 4-5 7-5s5.8 1.6 7 5"/></svg><span>حسابي</span></a>
+</nav>
+
+<div class="toast" id="toast" role="status"><img id="toastImg" alt=""><span id="toastMsg"></span></div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+
+<script src="assets/app.js?v=1.1.2"></script>
+</body>
+</html>
