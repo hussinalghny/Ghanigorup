@@ -4,7 +4,7 @@
 |---|---|---|
 | المعرّف | `online.ghanigroup.app` | `online.ghanigroup.app` |
 | الاسم في المتجر | Ghani Group | Ghani Group |
-| أقل نظام | iOS 13 (iPhone فقط) | Android 7.0 (API 24) |
+| أقل نظام | iOS 15 (iPhone فقط) | Android 7.0 (API 24) |
 | SDK البناء | Xcode 26 / iOS 26 SDK | targetSdk 36 (Android 16) |
 | السيرفر | `https://ghanigroup.online/api/v1` | نفسه |
 
@@ -145,6 +145,7 @@ Demo account is provided above.
 | Personal info ▸ Phone number | Yes | No | No (لإرسال الطلب) | App functionality |
 | Financial info ▸ Purchase history | Yes | No | No | App functionality |
 | Messages ▸ Other in-app messages (ملاحظات الطلب) | Yes | No | Yes | App functionality |
+| Device or other IDs (رمز الإشعارات — فقط إذا فعّلت Firebase) | Yes | No | No | App functionality |
 
 ### Store listing
 - النصوص من `docs/STORE_LISTING.md`.
@@ -156,6 +157,9 @@ Demo account is provided above.
 إذا كان حساب Google Play Console **شخصياً** وتم إنشاؤه بعد نوفمبر 2023، تشترط Google **اختباراً مغلقاً (Closed testing) بـ 12 مختبراً لمدة 14 يوماً** قبل السماح بالنشر للعامة. حسابات الشركات (Organization) معفاة — يُفضّل فتح الحساب باسم الشركة مع D-U-N-S.
 
 ---
+
+## الإشعارات الفورية
+إعداد Firebase خطوة بخطوة في `docs/FIREBASE.md`.
 
 ## 4) الإصدارات القادمة
 1. غيّر `version:` في `pubspec.yaml` (مثلاً `1.1.0+1`) — رقم البناء يزيد تلقائياً.
