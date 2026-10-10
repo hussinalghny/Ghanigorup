@@ -71,7 +71,9 @@ workflows:
           for f in "$APP"/Frameworks/*.framework "$APP"/Frameworks/*.dylib; do
             [ -e "$f" ] && codesign --force --sign - --timestamp=none "$f"
           done
-          codesign --force --sign - --timestamp=none --generate-entitlement-der "$APP"
+          ENT=""
+          [ -f ios/Runner/Runner.entitlements ] && ENT="--entitlements ios/Runner/Runner.entitlements"
+          codesign --force --sign - --timestamp=none --generate-entitlement-der $ENT "$APP"
           cd build/ipa && zip -qry "GhaniGroup-${VERSION}.ipa" Payload
     artifacts:
       - build/ipa/*.ipa
