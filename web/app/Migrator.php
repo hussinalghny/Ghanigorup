@@ -10,7 +10,7 @@ namespace App;
  */
 final class Migrator
 {
-    public const LATEST = '2026_10_002';
+    public const LATEST = '2026_10_003';
     private const FLAG = '/storage/schema.version';
 
     public static function ensure(): void
@@ -159,6 +159,32 @@ final class Migrator
                 ];
                 $st = $pdo->prepare('INSERT IGNORE INTO settings (k, v) VALUES (?, ?)');
                 foreach ($defaults as $k => $v) $st->execute([$k, $v]);
+            },
+
+            // أجهزة الإشعارات الفورية (Firebase Cloud Messaging)
+            '2026_10_003' => static function (\PDO $pdo) use ($T) {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS `device_tokens` (
+                    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    `token` VARCHAR(512) NOT NULL,
+                    `token_hash` CHAR(64) NOT NULL,
+                    `platform` ENUM('ios','android','web') NOT NULL DEFAULT 'android',
+                    `user_id` INT UNSIGNED NULL,
+                    `app_version` VARCHAR(20) NULL,
+                    `last_seen` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY `uq_dev_token` (`token_hash`),
+                    KEY `ix_dev_user` (`user_id`),
+                    CONSTRAINT `fk_dev_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+                ) $T");
+                // طلبات الضيوف التي يتابعها كل جهاز (رقم الطلب + الهاتف تم التحقق منهما)
+                $pdo->exec("CREATE TABLE IF NOT EXISTS `device_orders` (
+                    `device_id` INT UNSIGNED NOT NULL,
+                    `order_id` INT UNSIGNED NOT NULL,
+                    PRIMARY KEY (`device_id`, `order_id`),
+                    KEY `ix_do_order` (`order_id`),
+                    CONSTRAINT `fk_do_dev` FOREIGN KEY (`device_id`) REFERENCES `device_tokens`(`id`) ON DELETE CASCADE,
+                    CONSTRAINT `fk_do_order` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
+                ) $T");
             },
         ];
     }

@@ -23,7 +23,7 @@ final class Notify
         $body = sprintf($body, $order['ref']);
         if ($extra) $body .= ' ' . $extra;
         try {
-            DB::insert('notifications', [
+            $nid = DB::insert('notifications', [
                 'user_id' => $order['user_id'] ?: null,
                 'order_id' => (int)$order['id'],
                 'type' => 'order',
@@ -34,6 +34,12 @@ final class Notify
                 'created_by' => Auth::user()['id'] ?? null,
             ]);
             Cache::bump('notifications');
+            // إشعار فوري للهاتف (إذا كان Firebase مُعدّاً)
+            Push::later(static function () use ($order, $title, $body, $nid) {
+                Push::toDevices(Push::orderDevices($order), $title, $body, null, [
+                    'id' => $nid, 'type' => 'order', 'link_type' => 'order', 'link_value' => $order['ref'],
+                ]);
+            });
         } catch (\Throwable $e) {
             Log::error('notify: ' . $e->getMessage());
         }

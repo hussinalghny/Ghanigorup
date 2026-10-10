@@ -2,7 +2,8 @@
 # يضبط مشروع Xcode بعد توليده (يعمل على macOS — gem xcodeproj يأتي مع CocoaPods):
 #  - Bundle ID: online.ghanigroup.app
 #  - iPhone فقط (TARGETED_DEVICE_FAMILY = 1)
-#  - أقل إصدار iOS 13.0
+#  - أقل إصدار iOS 15.0 (متطلب Firebase)
+#  - Runner.entitlements للإشعارات الفورية إذا كان Firebase مفعّلاً
 #  - إضافة PrivacyInfo.xcprivacy إلى موارد التطبيق (مطلوب من Apple)
 require 'xcodeproj'
 
@@ -18,7 +19,7 @@ runner.build_configurations.each do |c|
   s = c.build_settings
   s['PRODUCT_BUNDLE_IDENTIFIER'] = BUNDLE_ID
   s['TARGETED_DEVICE_FAMILY'] = '1'
-  s['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+  s['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
   s['SUPPORTS_MACCATALYST'] = 'NO'
   s['SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD'] = 'NO'
   s['SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD'] = 'NO'
@@ -30,7 +31,7 @@ project.targets.select { |t| t.name == 'RunnerTests' }.each do |t|
   t.build_configurations.each { |c| c.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = "#{BUNDLE_ID}.RunnerTests" }
 end
 
-project.build_configurations.each { |c| c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0' }
+project.build_configurations.each { |c| c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0' }
 
 group = project.main_group['Runner'] || project.main_group.new_group('Runner', 'Runner')
 unless group.files.any? { |f| f.path == 'PrivacyInfo.xcprivacy' }
@@ -39,5 +40,18 @@ unless group.files.any? { |f| f.path == 'PrivacyInfo.xcprivacy' }
   puts '[xcode] PrivacyInfo.xcprivacy added to Runner resources'
 end
 
+# الإشعارات الفورية: يولّده tool/firebase_setup.py فقط عند وجود إعداد Firebase لـ iOS
+entitlements = File.join(root, 'ios', 'Runner', 'Runner.entitlements')
+runner.build_configurations.each do |c|
+  if File.exist?(entitlements)
+    c.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'Runner/Runner.entitlements'
+  else
+    c.build_settings.delete('CODE_SIGN_ENTITLEMENTS')
+  end
+end
+if File.exist?(entitlements) && group.files.none? { |f| f.path == 'Runner.entitlements' }
+  group.new_reference('Runner.entitlements')
+end
+
 project.save
-puts "[xcode] Runner: #{BUNDLE_ID}, iPhone only, iOS 13.0+ ✓"
+puts "[xcode] Runner: #{BUNDLE_ID}, iPhone only, iOS 15.0+#{File.exist?(entitlements) ? ', Push' : ''} ✓"

@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Controllers\AdminController as A;
 use App\Controllers\AuthController as Au;
 use App\Controllers\ContentController as Ct;
+use App\Controllers\DeviceController as Dv;
 use App\Controllers\HandoverController as H;
 use App\Controllers\OrderController as O;
 use App\Controllers\PublicController as P;
@@ -24,6 +25,8 @@ $r->get('/app/config', [P::class, 'appConfig']);
 $r->get('/banners', [P::class, 'banners']);
 $r->get('/notifications', [P::class, 'notifications']);
 $r->post('/notifications/feed', [P::class, 'notifications']);
+$r->post('/devices', [Dv::class, 'register']);
+$r->delete('/devices', [Dv::class, 'remove']);
 
 // ---------- الطلبات ----------
 $r->post('/orders', [O::class, 'create']);
@@ -101,6 +104,10 @@ $r->patch('/admin/users/{id:\d+}', [A::class, 'updateUser']);
 $r->get('/admin/settings', [A::class, 'settings']);
 $r->put('/admin/settings', [A::class, 'saveSettings']);
 $r->post('/admin/settings/image', [Ct::class, 'settingImage']);
+$r->get('/admin/firebase', [Ct::class, 'firebase']);
+$r->post('/admin/firebase', [Ct::class, 'saveFirebase']);
+$r->delete('/admin/firebase', [Ct::class, 'deleteFirebase']);
+$r->post('/admin/firebase/test', [Ct::class, 'testFirebase']);
 $r->post('/admin/import', [A::class, 'import']);
 $r->get('/admin/export', [A::class, 'export']);
 $r->get('/admin/audit', [A::class, 'audit']);

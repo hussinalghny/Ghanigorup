@@ -653,7 +653,9 @@ async function vSettings() {
     <div class="f"><label>العنوان</label><input name="address" value="${h(s.address)}"></div>
     <div class="checks"><label><input type="checkbox" id="sp" ${s.show_prices === '1' ? 'checked' : ''} data-skip="1">إظهار سعر اليوم للعملاء في الموقع والتطبيق</label></div>
     </form></div></div>
+    <div class="card fbcard" id="fb" style="max-width:1100px;margin-top:14px"><div class="skel" style="height:80px"></div></div>
     <div class="savebar"><button class="btn" id="saveAll">حفظ كل الإعدادات</button></div>`;
+  drawFirebase();
   $('#saveAll').onclick = async () => {
     const body = { ...val($('#sf')), ...val($('#hf')), ...val($('#wf')) };
     body.show_prices = $('#sp').checked ? '1' : '0';
@@ -665,6 +667,37 @@ async function vSettings() {
     const fdx = new FormData(); fdx.append('key', b.dataset.rm); fdx.append('remove', '1');
     try { await api('/admin/settings/image', { method: 'POST', form: fdx }); toast('تمت الإزالة'); vSettings(); } catch (e) { fail(e); }
   });
+}
+
+/* ---------- Firebase: الإشعارات الفورية ---------- */
+async function drawFirebase() {
+  const box = $('#fb'); if (!box) return;
+  let f;
+  try { f = (await api('/admin/firebase')).data; } catch (e) { box.innerHTML = `<div class="alert red">${h(e.message)}</div>`; return; }
+  const P = { ios: 'iPhone', android: 'Android', web: 'ويب' };
+  const devs = f.devices.length ? f.devices.map(d => `<span class="chip">${P[d.platform] || d.platform}: ${num(d.n)} جهاز${+d.users ? ` (${num(d.users)} مسجّل)` : ''}</span>`).join(' ') : '<span class="muted" style="font-size:12px">لا توجد أجهزة مسجّلة بعد — تُسجَّل تلقائياً عند فتح نسخة التطبيق المربوطة بـ Firebase</span>';
+  box.innerHTML = `<h3>الإشعارات الفورية — Firebase ${f.configured ? '<span class="chip ok"><i></i>مفعّلة</span>' : '<span class="chip"><i></i>غير مفعّلة</span>'}</h3>
+    ${f.configured ? `<div class="info" style="margin-bottom:12px"><div><small>المشروع</small><b class="ltr">${h(f.project_id)}</b></div><div><small>حساب الخدمة</small><b class="ltr" style="font-size:12px;word-break:break-all">${h(f.client_email)}</b></div></div>` :
+      `<p class="muted" style="font-size:12.5px;line-height:1.9;margin-bottom:12px">حتى تصل الإشعارات للهاتف والتطبيق مغلق: Firebase Console ← ⚙️ Project settings ← <b>Service accounts</b> ← <b>Generate new private key</b>، ثم ارفع ملف JSON هنا. (الملف يُحفظ على السيرفر في مكان غير عام)</p>`}
+    <div style="margin-bottom:12px">${devs}</div>
+    ${!f.requirements.openssl || !f.requirements.curl ? '<div class="alert red" style="margin-bottom:10px">السيرفر يحتاج إضافات PHP: openssl و curl</div>' : ''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <label class="btn ${f.configured ? 'lt' : ''} sm" style="cursor:pointer">${f.configured ? 'استبدال ملف الخدمة' : 'رفع ملف الخدمة (JSON)'}<input type="file" accept=".json,application/json" id="fbFile" hidden></label>
+      ${f.configured ? '<button class="btn sm" id="fbTest">اختبار الاتصال</button><button class="btn ghost sm" id="fbDel" style="color:var(--red)">إيقاف</button>' : ''}
+    </div><div id="fbMsg" style="margin-top:10px"></div>`;
+  $('#fbFile').onchange = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    const fdx = new FormData(); fdx.append('file', file);
+    try { await api('/admin/firebase', { method: 'POST', form: fdx }); toast('تم ربط Firebase ✓'); drawFirebase(); } catch (er) { fail(er); }
+  };
+  if ($('#fbTest')) $('#fbTest').onclick = async () => {
+    $('#fbMsg').innerHTML = '<div class="alert warn">جاري الاتصال بـ Google…</div>';
+    try {
+      const { data } = await api('/admin/firebase/test', { method: 'POST' });
+      $('#fbMsg').innerHTML = `<div class="alert ok">الاتصال بـ Firebase يعمل ✓ ${data.sent_to_my_devices ? `— أُرسل إشعار تجربة إلى ${data.sent_to_my_devices} من أجهزتك` : '— سجّل دخولك بالتطبيق بنفس حسابك لتصلك رسالة تجربة'}</div>`;
+    } catch (er) { $('#fbMsg').innerHTML = `<div class="alert red">${h(er.message)}</div>`; }
+  };
+  if ($('#fbDel')) $('#fbDel').onclick = async () => { if (!confirm('إيقاف الإشعارات الفورية وحذف ملف الخدمة من السيرفر؟')) return; try { await api('/admin/firebase', { method: 'DELETE' }); drawFirebase(); } catch (er) { fail(er); } };
 }
 
 /* ---------- روابط البنرات والإشعارات ---------- */
@@ -811,7 +844,7 @@ async function vNotifications(params) {
     Object.entries(val(nf)).forEach(([k, v]) => fdx.append(k, v));
     if ($('#nimg').files[0]) fdx.append('image', $('#nimg').files[0]);
     $('#nsend').disabled = true;
-    try { await api('/admin/notifications', { method: 'POST', form: fdx }); toast('تم إرسال الإشعار ✓'); nf.reset(); linkPicker(nf, 'none', ''); $('#pvI').hidden = true; pv(); load(); }
+    try { const r = await api('/admin/notifications', { method: 'POST', form: fdx }); toast(r.data.push ? 'تم الإرسال — داخل التطبيق + إشعار فوري للهواتف ✓' : 'تم الإرسال داخل التطبيق ✓ (فعّل Firebase من الإعدادات للإشعارات الفورية)'); nf.reset(); linkPicker(nf, 'none', ''); $('#pvI').hidden = true; pv(); load(); }
     catch (er) { markErrors(nf, er.details); fail(er); }
     $('#nsend').disabled = false;
   };

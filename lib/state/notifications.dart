@@ -32,6 +32,10 @@ class NotificationsState extends ChangeNotifier with WidgetsBindingObserver {
   final _incoming = StreamController<AppNotification>.broadcast();
 
   Stream<AppNotification> get incoming => _incoming.stream;
+
+  /// طلبات الضيف المتابَعة (للتسجيل في الإشعارات الفورية)
+  List<Map<String, String>> get track => List.unmodifiable(_track);
+  VoidCallback? onTrackChanged;
   int get unread => items.where((n) => n.id > lastSeen).length;
 
   bool _started = false;
@@ -85,6 +89,7 @@ class NotificationsState extends ChangeNotifier with WidgetsBindingObserver {
       final p = await SharedPreferences.getInstance();
       await p.setString(_kTrack, jsonEncode(_track));
     } catch (_) {}
+    onTrackChanged?.call();
     refresh();
   }
 

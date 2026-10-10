@@ -9,6 +9,7 @@ use App\Catalog;
 use App\DB;
 use App\HttpError;
 use App\Notify;
+use App\Push;
 use App\Request;
 use App\Response;
 use App\Security;
@@ -244,7 +245,15 @@ final class ContentController
         Cache::bump('notifications');
         Auth::audit('notification.send', 'notification', $id, ['title' => $d['title']]);
         $n = DB::oneW('SELECT * FROM notifications WHERE id = ?', [$id]);
-        Response::json(Notify::present($n), 201);
+        $p = Notify::present($n);
+        $data = ['id' => $id, 'type' => $d['type'], 'link_type' => $d['link_type'], 'link_value' => $d['link_value'] ?? ''];
+        if (!empty($d['user_id'])) {
+            $uid = (int)$d['user_id'];
+            Push::later(fn() => Push::toDevices(Push::userDevices($uid), $d['title'], $d['body'] ?? null, $p['image'], $data));
+        } else {
+            Push::later(fn() => Push::broadcast($d['title'], $d['body'] ?? null, $p['image'], $data));
+        }
+        Response::json($p + ['push' => Push::configured()], 201);
     }
 
     public function deleteNotification(Request $r): void
@@ -275,5 +284,60 @@ final class ContentController
         Cache::bump('catalog');
         Auth::audit('settings.image', 'settings', null, ['key' => $key]);
         Response::json(['key' => $key, 'url' => Catalog::url($path)]);
+    }
+
+    // ======================= Firebase (الإشعارات الفورية) =======================
+
+    private function adminOnly(): void
+    {
+        if ($this->u['role'] !== 'admin') throw new HttpError(403, 'forbidden', 'هذا الإجراء للمدير فقط');
+    }
+
+    public function firebase(Request $r): void
+    {
+        $this->adminOnly();
+        $c = Push::credentials();
+        Response::json([
+            'configured' => Push::configured(),
+            'project_id' => $c['project_id'] ?? null,
+            'client_email' => $c['client_email'] ?? null,
+            'requirements' => ['openssl' => function_exists('openssl_sign'), 'curl' => function_exists('curl_init')],
+            'devices' => DB::all("SELECT platform, COUNT(*) n, SUM(user_id IS NOT NULL) users FROM device_tokens GROUP BY platform"),
+        ]);
+    }
+
+    /** رفع ملف حساب الخدمة من Firebase Console ← Project settings ← Service accounts */
+    public function saveFirebase(Request $r): void
+    {
+        $this->adminOnly();
+        $f = $_FILES['file'] ?? null;
+        if (!$f || $f['error'] !== UPLOAD_ERR_OK || $f['size'] > 20000 || !is_uploaded_file($f['tmp_name'])) {
+            throw new HttpError(422, 'upload', 'ارفع ملف JSON الخاص بحساب الخدمة');
+        }
+        $info = Push::saveCredentials((string)file_get_contents($f['tmp_name']));
+        Auth::audit('firebase.save', 'settings', null, ['project' => $info['project_id']]);
+        $this->firebase($r);
+    }
+
+    public function deleteFirebase(Request $r): void
+    {
+        $this->adminOnly();
+        Push::removeCredentials();
+        Auth::audit('firebase.delete', 'settings');
+        $this->firebase($r);
+    }
+
+    /** يتحقق من المفتاح مع Google، ويرسل تجربة لأجهزة المدير إن وُجدت */
+    public function testFirebase(Request $r): void
+    {
+        $this->adminOnly();
+        if (!Push::configured()) throw new HttpError(409, 'not_configured', 'ارفع ملف Firebase أولاً');
+        try {
+            Push::accessToken(true);
+        } catch (\Throwable $e) {
+            throw new HttpError(502, 'firebase', $e->getMessage());
+        }
+        $sent = Push::toDevices(Push::userDevices((int)$this->u['id']), 'تجربة إشعار ✓', 'الإشعارات الفورية تعمل على هذا الجهاز.', null, ['type' => 'info', 'link_type' => 'none']);
+        Response::json(['auth' => true, 'sent_to_my_devices' => $sent]);
     }
 }

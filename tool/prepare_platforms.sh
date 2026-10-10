@@ -12,6 +12,9 @@ flutter create --org online.ghanigroup --project-name ghani_group --platforms=an
 # 2) إعدادات المتاجر (Bundle/Package ID، SDK، التوقيع، الصلاحيات، Info.plist)
 python3 tool/patch_platforms.py
 
+# 2b) Firebase للإشعارات الفورية (اختياري — من firebase/ أو متغيرات CI السرية)
+python3 tool/firebase_setup.py
+
 # 3) الحزم + الأيقونات + شاشة البداية
 flutter pub get
 dart run flutter_launcher_icons

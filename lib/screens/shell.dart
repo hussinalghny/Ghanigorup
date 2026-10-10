@@ -8,7 +8,10 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
 import '../state/cart.dart';
+import '../core/api.dart';
 import '../state/notifications.dart';
+import '../state/push.dart';
+import '../state/session.dart';
 import '../widgets/heads_up.dart';
 import '../widgets/links.dart';
 import '../widgets/motion.dart';
@@ -48,6 +51,17 @@ class _ShellState extends State<Shell> {
       });
     });
     notifs.start();
+    // الإشعارات الفورية (Firebase) — لا تعمل إلا إذا أُضيفت ملفات Firebase وقت البناء
+    final push = PushService(
+      api: context.read<ApiClient>(),
+      session: context.read<SessionState>(),
+      notifications: notifs,
+      openLink: (link) {
+        final c = appNavigator.currentContext;
+        if (c != null) openAppLink(c, link);
+      },
+    );
+    Future.delayed(const Duration(milliseconds: 1500), push.start);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 700), () {
         if (mounted) maybeShowWelcome(context, context.read<AppState>().config.welcome);

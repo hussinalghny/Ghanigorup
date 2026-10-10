@@ -10,6 +10,9 @@ import '../state/notifications.dart';
 import '../state/session.dart';
 import 'common.dart';
 
+/// مفتاح الملاحة العام (لفتح صفحة عند الضغط على إشعار فوري)
+final appNavigator = GlobalKey<NavigatorState>();
+
 /// فتح رابط بنر أو إشعار: قسم، ماركة، معدة، الباقات، طلب، أو رابط خارجي
 void openAppLink(BuildContext context, AppLink link) {
   final app = context.read<AppState>();

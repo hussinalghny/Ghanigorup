@@ -15,6 +15,7 @@ import 'state/cart.dart';
 import 'state/notifications.dart';
 import 'state/session.dart';
 import 'state/theme_state.dart';
+import 'widgets/links.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -167,6 +168,7 @@ class _GhaniAppState extends State<GhaniApp> with SingleTickerProviderStateMixin
           ),
         );
       },
+      navigatorKey: appNavigator,
       home: const StartupGate(),
     );
   }

@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 define('ROOT', dirname(__DIR__));
 define('APP_START', microtime(true));
-define('APP_VERSION', '1.2.0');
+define('APP_VERSION', '1.2.1');
 define('LOCK', ROOT . '/config/install.lock');
 define('SCHEMA_VERSION', '2026_10_001');
 
