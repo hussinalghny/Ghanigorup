@@ -34,11 +34,22 @@
    - `android-release` — بناء AAB ورفعه إلى Google Play (Internal testing).
 3. يبدأ البناء عند إنشاء Tag يبدأ بـ `v` (مثل `v1.0.0`)، أو يدوياً من زر **Start new build**.
 
-### إعداد iOS في Codemagic
+### IPA بدون توقيع (بدون حساب Apple)
+مسار `ios-unsigned` في Codemagic (أو GitHub Actions ▸ Build apps) يبني IPA غير موقّع تقدر توقّعه بشهادتك. لا يحتاج أي إعداد.
+
+### إعداد iOS في Codemagic (للرفع على App Store)
+0. سجّل الـ Bundle ID: developer.apple.com ▸ Certificates, IDs & Profiles ▸ Identifiers ▸ ➕ ▸ App IDs ▸ App ▸
+   Description `Ghani Group` ▸ Bundle ID (Explicit) `online.ghanigroup.app` ▸ Register.
+   (بدونه يظهر الخطأ: *No matching profiles found for bundle identifier "online.ghanigroup.app"*)
 1. App Store Connect ▸ Users and Access ▸ Integrations ▸ **App Store Connect API** ▸ أنشئ مفتاحاً بصلاحية **App Manager**، ونزّل ملف `.p8`.
 2. Codemagic ▸ Team settings ▸ Integrations ▸ **Developer Portal** ▸ Add key، وسمّه بالضبط: `GhaniGroup ASC`.
 3. في `codemagic.yaml` ضع قيمة `APP_STORE_APPLE_ID` (رقم التطبيق من App Store Connect ▸ App Information ▸ Apple ID).
-4. شهادات التوقيع و Provisioning Profiles تُنشأ وتُجلب تلقائياً، لا تحتاج Mac.
+4. أنشئ مفتاحاً خاصاً للشهادة مرة واحدة (على أي جهاز فيه OpenSSL):
+   ```bash
+   ssh-keygen -t rsa -b 2048 -m PEM -f ghani_cert_key -q -N ""
+   ```
+   Codemagic ▸ Environment variables ▸ مجموعة باسم `ios_signing` ▸ متغير `CERTIFICATE_PRIVATE_KEY` = محتوى ملف `ghani_cert_key` كاملاً (Secure). احتفظ بالملف — نفس المفتاح يُستخدم لكل البناءات.
+5. عند أول بناء `ios-release` يُنشئ Codemagic شهادة التوزيع وملف Provisioning تلقائياً، ولا تحتاج Mac.
 
 ### إعداد Android في Codemagic
 1. أنشئ مفتاح الرفع (Upload key) مرة واحدة واحفظه في مكان آمن:
