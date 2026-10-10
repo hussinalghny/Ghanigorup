@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 define('ROOT', dirname(__DIR__));
 define('APP_START', microtime(true));
-define('APP_VERSION', '1.1.3');
+define('APP_VERSION', '1.2.0');
 define('LOCK', ROOT . '/config/install.lock');
 define('SCHEMA_VERSION', '2026_10_001');
 
@@ -191,6 +191,11 @@ if ($action !== '') {
             $report = (new Importer(__DIR__ . '/seed/images'))->run($data);
             $log[] = "ترحيل البيانات: {$report['categories']} قسم، {$report['equipment']} معدة، {$report['kits']} باقة، {$report['images']} صورة، {$report['settings']} إعداد";
             foreach (array_slice($report['errors'], 0, 10) as $e) $log[] = '⚠ ' . $e;
+
+            // ترحيلات القاعدة (الأدوار، البنرات، الماركات، الإشعارات، محاضر التسليم)
+            $mig = App\Migrator::run();
+            @file_put_contents(ROOT . '/storage/schema.version', App\Migrator::LATEST);
+            $log[] = 'ترقية القاعدة: ' . ($mig ? implode('، ', $mig) : 'محدّثة');
 
             // 3) حساب المدير
             $hash = Security::hashPassword($adminPass);

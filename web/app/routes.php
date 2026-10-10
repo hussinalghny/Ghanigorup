@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 use App\Controllers\AdminController as A;
 use App\Controllers\AuthController as Au;
+use App\Controllers\ContentController as Ct;
+use App\Controllers\HandoverController as H;
 use App\Controllers\OrderController as O;
 use App\Controllers\PublicController as P;
 use App\Router;
@@ -19,6 +21,9 @@ $r->get('/equipment/{slug:[a-z0-9\-]+}', [P::class, 'show']);
 $r->get('/equipment/{slug:[a-z0-9\-]+}/availability', [P::class, 'availability']);
 $r->get('/kits', [P::class, 'kits']);
 $r->get('/app/config', [P::class, 'appConfig']);
+$r->get('/banners', [P::class, 'banners']);
+$r->get('/notifications', [P::class, 'notifications']);
+$r->post('/notifications/feed', [P::class, 'notifications']);
 
 // ---------- الطلبات ----------
 $r->post('/orders', [O::class, 'create']);
@@ -47,6 +52,29 @@ $r->get('/admin/system', [A::class, 'system']);
 $r->get('/admin/orders', [A::class, 'orders']);
 $r->get('/admin/orders/{id:\d+}', [A::class, 'order']);
 $r->patch('/admin/orders/{id:\d+}', [A::class, 'updateOrder']);
+$r->post('/admin/orders/{id:\d+}/handover', [H::class, 'create']);
+$r->get('/admin/handovers', [H::class, 'index']);
+$r->get('/admin/handovers/board', [H::class, 'board']);
+$r->get('/admin/handovers/{id:\d+}/signature', [H::class, 'signature']);
+$r->get('/admin/staff', [A::class, 'staffList']);
+
+$r->get('/admin/banners', [Ct::class, 'banners']);
+$r->post('/admin/banners', [Ct::class, 'saveBanner']);
+$r->post('/admin/banners/sort', [Ct::class, 'sortBanners']);
+$r->patch('/admin/banners/{id:\d+}', [Ct::class, 'saveBanner']);
+$r->delete('/admin/banners/{id:\d+}', [Ct::class, 'deleteBanner']);
+$r->post('/admin/banners/{id:\d+}/image', [Ct::class, 'bannerImage']);
+
+$r->get('/admin/brands', [Ct::class, 'brands']);
+$r->post('/admin/brands', [Ct::class, 'saveBrand']);
+$r->post('/admin/brands/sync', [Ct::class, 'syncBrands']);
+$r->patch('/admin/brands/{id:\d+}', [Ct::class, 'saveBrand']);
+$r->delete('/admin/brands/{id:\d+}', [Ct::class, 'deleteBrand']);
+$r->post('/admin/brands/{id:\d+}/logo', [Ct::class, 'brandLogo']);
+
+$r->get('/admin/notifications', [Ct::class, 'notifications']);
+$r->post('/admin/notifications', [Ct::class, 'sendNotification']);
+$r->delete('/admin/notifications/{id:\d+}', [Ct::class, 'deleteNotification']);
 
 $r->get('/admin/equipment', [A::class, 'equipment']);
 $r->post('/admin/equipment', [A::class, 'createEquipment']);
@@ -72,6 +100,7 @@ $r->patch('/admin/users/{id:\d+}', [A::class, 'updateUser']);
 
 $r->get('/admin/settings', [A::class, 'settings']);
 $r->put('/admin/settings', [A::class, 'saveSettings']);
+$r->post('/admin/settings/image', [Ct::class, 'settingImage']);
 $r->post('/admin/import', [A::class, 'import']);
 $r->get('/admin/export', [A::class, 'export']);
 $r->get('/admin/audit', [A::class, 'audit']);

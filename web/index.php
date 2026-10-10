@@ -32,6 +32,9 @@ if (str_starts_with($req->path, '/api/')) {
 
         if (($_SERVER['CONTENT_LENGTH'] ?? 0) > 25 * 1024 * 1024) throw new HttpError(413, 'too_large', 'حجم الطلب كبير');
 
+        // ترقية القاعدة تلقائياً بعد رفع نسخة جديدة (مرة واحدة فقط)
+        App\Migrator::ensure();
+
         $router = require __DIR__ . '/app/routes.php';
         if ($path === '/' ) Response::json(['name' => 'Ghani Group Rental API', 'version' => 'v1', 'endpoints' => $router->list()]);
         $router->dispatch($req, $path);

@@ -29,7 +29,7 @@ final class AuthController
         return [
             'id' => (int)$u['id'], 'name' => $u['name'], 'email' => $u['email'],
             'phone' => $u['phone'], 'company' => $u['company'], 'role' => $u['role'],
-        ];
+        ] + (in_array($u['role'], Auth::PANEL_ROLES, true) ? ['perms' => Auth::perms($u)] : []);
     }
 
     public function register(Request $r): void
@@ -90,7 +90,7 @@ final class AuthController
         }
         DB::update('users', $upd, 'id = :id', ['id' => $u['id']]);
         $token = Auth::issue((int)$u['id'], $r, $this->wantsCookie($r));
-        if (in_array($u['role'], ['admin', 'staff'], true)) {
+        if (in_array($u['role'], Auth::PANEL_ROLES, true)) {
             DB::insert('audit_log', ['user_id' => $u['id'], 'action' => 'login', 'entity' => 'user', 'entity_id' => $u['id'], 'ip' => $r->ip()]);
         }
         Response::json(['user' => $this->present($u)] + ($this->wantsCookie($r) ? [] : ['token' => $token]));

@@ -133,24 +133,30 @@ function fieldErrors(form, details) {
 async function viewHome() {
   setNav('home');
   app.innerHTML = `<div class="wrap page">${skelGrid(4)}</div>`;
-  const [cats, feat, neu, kits] = await Promise.all([
+  const [cats, feat, neu, kits, banners, brands] = await Promise.all([
     api('/categories', { cache: true }), api('/equipment', { query: { featured: 1, per_page: 8 } }),
     api('/equipment', { query: { new: 1, per_page: 8 } }), api('/kits', { cache: true }),
+    api('/banners').catch(() => ({ data: [] })), api('/brands', { query: { featured: 1 } }).catch(() => ({ data: [] })),
   ]);
   S.cats = cats.data;
   const hero = S.settings.hero_image;
+  const kitsSlide = `<a class="banner slide" href="#/kits">${hero ? `<img src="${h(hero)}" alt="">` : ''}
+        <div class="t"><div><small>${h((S.settings.company_name || 'GHANI GROUP').toUpperCase())} · FILM PRODUCTION</small><h3>أسطول وطاقم فني<br>من التحضير حتى التسليم</h3></div><span class="go">${I.arrow}</span></div></a>`;
+  const slides = [...banners.data.map(b => { const l = linkOf(b.link_type, b.link_value); return `<a class="banner slide" href="${h(l.href)}" ${l.ext ? 'target="_blank" rel="noopener"' : ''}><img src="${h(b.image)}" alt="${h(b.title || '')}">
+        ${b.title || b.subtitle || b.button_text ? `<div class="t"><div>${b.subtitle ? `<small>${h(b.subtitle)}</small>` : ''}${b.title ? `<h3>${h(b.title)}</h3>` : ''}</div>${b.button_text ? `<span class="cta">${h(b.button_text)}</span>` : `<span class="go">${I.arrow}</span>`}</div>` : ''}</a>`; }), kitsSlide];
   app.innerHTML = `<div class="wrap page">
     <section class="hero-a">
       <div>
-        <h1 class="h1">ماذا ستصوّر<br><span>هذا الأسبوع؟</span></h1>
+        <h1 class="h1">${h(S.settings.home_title || 'ماذا ستصوّر')}<br><span>${h(S.settings.home_subtitle ?? 'هذا الأسبوع؟')}</span></h1>
         <form class="srch" id="homeSearch">${I.search}<input name="q" placeholder="ابحث عن كاميرا، عدسة، إضاءة…" aria-label="بحث"><button class="go" aria-label="بحث">${I.arrow}</button></form>
       </div>
-      <a class="banner" href="#/kits">${hero ? `<img src="${h(hero)}" alt="">` : ''}
-        <div class="t"><div><small>${h((S.settings.company_name || 'GHANI GROUP').toUpperCase())} · FILM PRODUCTION</small><h3>أسطول وطاقم فني<br>من التحضير حتى التسليم</h3></div><span class="go">${I.arrow}</span></div></a>
+      <div class="slider" id="slider"><div class="track">${slides.join('')}</div>${slides.length > 1 ? `<div class="dots">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}</div>
     </section>
     ${installCard()}
     <div class="sec"><h2>الأقسام</h2><a href="#/browse">عرض الكل</a></div>
     <div class="deps">${cats.data.map(c => `<a class="dp" href="#/browse?cat=${h(c.slug)}"><div class="ph"><img src="${h(c.image || '')}" alt=""></div>${h(c.name_ar)}<small>${c.count} معدة</small></a>`).join('')}</div>
+    ${brands.data.length ? `<div class="sec"><h2>الماركات</h2><a href="#/browse?sort=brand">كل المعدات</a></div>
+    <div class="brands">${brands.data.map(b => `<a class="br" href="#/browse?brand=${encodeURIComponent(b.name)}">${b.logo ? `<img src="${h(b.logo)}" alt="${h(b.name)}">` : `<b class="ltr">${h(b.name)}</b>`}<small>${b.count} معدة</small></a>`).join('')}</div>` : ''}
     <div class="sec"><h2>الأكثر طلباً</h2><a href="#/browse">عرض الكل</a></div>
     <div class="grid" id="feat">${feat.data.map(card).join('')}</div>
     ${kits.data.length ? `<div class="sec"><h2>باقات جاهزة</h2><a href="#/kits">كل الباقات</a></div><div class="kits" id="kits">${kits.data.map(kitCard).join('')}</div>` : ''}
@@ -159,6 +165,7 @@ async function viewHome() {
   bindCards(app, [...feat.data, ...neu.data]);
   bindKits(kits.data);
   bindInstall();
+  runSlider($('#slider'));
   $('#homeSearch').onsubmit = e => { e.preventDefault(); location.hash = '#/browse?q=' + encodeURIComponent(e.target.q.value.trim()); };
 }
 
@@ -188,21 +195,21 @@ async function viewKits() {
 
 async function viewBrowse(params) {
   setNav('browse');
-  const st = { cat: params.get('cat') || '', q: params.get('q') || '', sort: params.get('sort') || 'default', page: 1, items: [] };
+  const st = { cat: params.get('cat') || '', q: params.get('q') || '', brand: params.get('brand') || '', sort: params.get('sort') || 'default', page: 1, items: [] };
   const cats = (await api('/categories', { cache: true })).data;
   const total = cats.reduce((a, c) => a + c.count, 0);
   app.innerHTML = `<div class="wrap page">
     <h1 class="ttl">تصفّح المعدات</h1>
     <form class="srch" id="bSearch" style="margin-top:12px">${I.search}<input name="q" value="${h(st.q)}" placeholder="ALEXA، SkyPanel، Dolly…" aria-label="بحث"></form>
     <div class="pills">${[{ slug: '', name_ar: 'الكل', count: total }, ...cats].map(c => `<button class="pl ${st.cat === c.slug ? 'on' : ''}" data-cat="${h(c.slug)}">${h(c.name_ar)}<i>${c.count}</i></button>`).join('')}</div>
-    <div class="tools"><span id="cnt"></span><select id="sort" aria-label="الترتيب"><option value="default">الأبرز</option><option value="name">الاسم</option><option value="brand">الماركة</option><option value="newest">الأحدث</option></select></div>
+    <div class="tools"><span id="cnt"></span>${st.brand ? `<button class="pl on" id="brandX">${h(st.brand)} ✕</button>` : ''}<select id="sort" aria-label="الترتيب"><option value="default">الأبرز</option><option value="name">الاسم</option><option value="brand">الماركة</option><option value="newest">الأحدث</option></select></div>
     <div class="grid g5" id="res">${'<div class="skel" style="height:250px"></div>'.repeat(8)}</div>
     <div class="more" id="more"></div></div>`;
   $('#sort').value = st.sort;
-  const sync = () => { const p = new URLSearchParams(); if (st.cat) p.set('cat', st.cat); if (st.q) p.set('q', st.q); if (st.sort !== 'default') p.set('sort', st.sort); history.replaceState(null, '', '#/browse' + (p.toString() ? '?' + p : '')); };
+  const sync = () => { const p = new URLSearchParams(); if (st.cat) p.set('cat', st.cat); if (st.q) p.set('q', st.q); if (st.brand) p.set('brand', st.brand); if (st.sort !== 'default') p.set('sort', st.sort); history.replaceState(null, '', '#/browse' + (p.toString() ? '?' + p : '')); };
   async function load(reset) {
     if (reset) { st.page = 1; st.items = []; $('#res').innerHTML = '<div class="skel" style="height:250px"></div>'.repeat(4); }
-    const r = await api('/equipment', { query: { category: st.cat, q: st.q, sort: st.sort, page: st.page, per_page: 20 } });
+    const r = await api('/equipment', { query: { category: st.cat, q: st.q, brand: st.brand, sort: st.sort, page: st.page, per_page: 20 } });
     st.items.push(...r.data);
     $('#cnt').textContent = r.meta.total + ' معدة';
     $('#res').innerHTML = st.items.length ? st.items.map(card).join('') : `<div class="empty" style="grid-column:1/-1"><h3>لا توجد نتائج</h3><p>جرّب كلمة بحث أخرى أو قسماً آخر.</p></div>`;
@@ -215,6 +222,7 @@ async function viewBrowse(params) {
   $('#bSearch').oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value.trim(); sync(); load(true); }, 300); };
   $('#bSearch').onsubmit = e => e.preventDefault();
   $('#sort').onchange = e => { st.sort = e.target.value; sync(); load(true); };
+  if ($('#brandX')) $('#brandX').onclick = () => { st.brand = ''; $('#brandX').remove(); sync(); load(true); };
   await load(true);
 }
 
@@ -369,6 +377,7 @@ async function viewOrder() {
       const waText = `طلب عرض سعر ${o.ref}\n${o.project ? 'المشروع: ' + o.project + '\n' : ''}${fmtDate(o.start_date)} ← ${fmtDate(o.end_date)}\n${lines}`;
       const wa = S.settings.whatsapp ? `https://wa.me/${encodeURIComponent(S.settings.whatsapp)}?text=${encodeURIComponent(waText)}` : '';
       store.set('last_order', { ref: o.ref, phone: o.phone });
+      store.set('track', [{ ref: o.ref, phone: o.phone }, ...store.get('track', []).filter(t => t.ref !== o.ref)].slice(0, 20));
       S.cart = { items: {}, start: '', end: '' }; saveCart();
       openSheet(`<div class="ok">${I.ok}</div><h3>وصل طلبك</h3>
         <p>رقم الطلب <b class="ltr">${h(o.ref)}</b><br>سيراجع قسم التأجير التوفر ويرسل لك عرض السعر.</p>
@@ -533,6 +542,77 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ---------------- router ---------------- */
+/* ---------------- روابط البنرات والإشعارات ---------------- */
+function linkOf(type, v) {
+  switch (type) {
+    case 'category': return { href: '#/browse?cat=' + encodeURIComponent(v || '') };
+    case 'brand': return { href: '#/browse?brand=' + encodeURIComponent(v || '') };
+    case 'equipment': return { href: '#/item/' + encodeURIComponent(v || '') };
+    case 'kits': return { href: '#/kits' };
+    case 'order': return { href: '#/track?ref=' + encodeURIComponent(v || '') };
+    case 'url': return /^https?:\/\//i.test(v || '') ? { href: v, ext: true } : { href: '#/' };
+    default: return { href: '#/' };
+  }
+}
+
+/* شرائح البنرات: تمرير باللمس (scroll-snap) + تقدم تلقائي */
+function runSlider(el) {
+  if (!el) return;
+  const tr = $('.track', el), dots = $$('.dots i', el), n = tr.children.length;
+  if (n < 2) return;
+  let i = 0, timer;
+  const go = k => { i = (k + n) % n; tr.scrollTo({ left: -i * tr.clientWidth * (document.dir === 'rtl' || getComputedStyle(tr).direction === 'rtl' ? 1 : -1), behavior: 'smooth' }); };
+  const auto = () => { clearInterval(timer); timer = setInterval(() => { if (!document.body.contains(el)) return clearInterval(timer); go(i + 1); }, 5500); };
+  tr.addEventListener('scroll', () => { const k = Math.round(Math.abs(tr.scrollLeft) / tr.clientWidth); if (k !== i) i = k; dots.forEach((d, j) => d.classList.toggle('on', j === k)); }, { passive: true });
+  dots.forEach((d, j) => d.onclick = () => { go(j); auto(); });
+  tr.addEventListener('pointerdown', auto, { passive: true });
+  auto();
+}
+
+/* رسالة الترحيب (تُدار من لوحة التحكم ← الإعدادات) */
+function maybeWelcome() {
+  const w = S.settings.welcome;
+  if (!w || location.hash.startsWith('#/order')) return;
+  const seen = store.get('welcome', {});
+  const today = ymd(new Date());
+  if (w.frequency === 'once' && seen.id === w.id) return;
+  if (w.frequency === 'daily' && seen.id === w.id && seen.day === today) return;
+  store.set('welcome', { id: w.id, day: today });
+  const l = w.link ? linkOf(/^https?:/i.test(w.link) ? 'url' : 'none', w.link) : null;
+  setTimeout(() => {
+    openSheet(`<div class="wel">${w.image ? `<img src="${h(w.image)}" alt="">` : ''}<h3>${h(w.title)}</h3>${w.body ? `<p>${h(w.body).replace(/\n/g, '<br>')}</p>` : ''}
+      ${l ? `<a class="btn block" href="${h(l.href)}" target="_blank" rel="noopener" id="welGo">${h(w.button)}</a>` : `<button class="btn block" id="welGo">${h(w.button)}</button>`}</div>`);
+    $('#welGo').addEventListener('click', () => closeSheet());
+  }, 700);
+}
+
+/* ---------------- الإشعارات ---------------- */
+const N = { list: [], seen: 0 };
+async function loadNotifications() {
+  try {
+    const track = store.get('track', []);
+    const r = track.length ? await api('/notifications/feed', { method: 'POST', body: { track } }) : await api('/notifications');
+    N.list = r.data;
+    N.seen = store.get('notif_seen', 0);
+    const unread = N.list.filter(n => n.id > N.seen).length;
+    $$('[data-ncount]').forEach(c => { c.textContent = unread > 9 ? '9+' : unread; c.hidden = !unread; });
+  } catch (e) { /* ignore */ }
+}
+function openNotifications() {
+  const icon = { promo: '🎬', order: '📦', info: '🔔' };
+  openSheet(`<h3 style="text-align:right">الإشعارات</h3><div class="nlist">${N.list.length ? N.list.map(n => { const l = linkOf(n.link_type, n.link_value);
+    return `<a class="ni ${n.id > N.seen ? 'new' : ''}" href="${h(l.href)}" ${l.ext ? 'target="_blank" rel="noopener"' : ''}><span class="nic">${icon[n.type] || '🔔'}</span><span class="nt"><b>${h(n.title)}</b>${n.body ? `<small>${h(n.body)}</small>` : ''}${n.image ? `<img src="${h(n.image)}" alt="">` : ''}<em>${h(ago(n.created_at))}</em></span></a>`; }).join('')
+    : '<div class="empty" style="padding:30px"><h3>لا توجد إشعارات</h3><p>العروض وتحديثات طلباتك ستظهر هنا.</p></div>'}</div>`);
+  $$('#sheet .ni').forEach(a => a.addEventListener('click', () => closeSheet()));
+  if (N.list.length) { N.seen = N.list[0].id; store.set('notif_seen', N.seen); $$('[data-ncount]').forEach(c => { c.hidden = true; }); }
+}
+function ago(s) {
+  const d = new Date(String(s).replace(' ', 'T')), m = Math.round((Date.now() - d) / 60000);
+  if (m < 1) return 'الآن'; if (m < 60) return 'قبل ' + m + ' دقيقة';
+  const hr = Math.round(m / 60); if (hr < 24) return 'قبل ' + hr + ' ساعة';
+  const dd = Math.round(hr / 24); return dd < 30 ? 'قبل ' + dd + ' يوم' : fmtDate(ymd(d));
+}
+
 async function route() {
   const raw = location.hash.replace(/^#/, '') || '/';
   const [path, qs] = raw.split('?');
@@ -584,5 +664,10 @@ window.addEventListener('hashchange', route);
     await loadFavs();
   } catch (e) { /* يكمل حتى لو فشل */ }
   route();
+  maybeWelcome();
+  loadNotifications();
+  setInterval(() => { if (!document.hidden) loadNotifications(); }, 90000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) loadNotifications(); });
+  $('#bellBtn')?.addEventListener('click', openNotifications);
 })();
 })();

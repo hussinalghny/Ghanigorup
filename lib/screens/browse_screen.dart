@@ -24,6 +24,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   Timer? _debounce;
 
   String _cat = '';
+  String _brand = '';
   String _sort = 'default';
   int _page = 1, _pages = 1, _total = 0, _nonce = -1;
   bool _loading = true;
@@ -54,10 +55,11 @@ class _BrowseScreenState extends State<BrowseScreen> {
       final first = _nonce == -1;
       _nonce = app.browseNonce;
       if (!first || app.browseNonce > 0) {
-        final cat = app.browseCategory, query = app.browseQuery, focus = app.browseFocus;
+        final cat = app.browseCategory, brand = app.browseBrand, query = app.browseQuery, focus = app.browseFocus;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           _cat = cat;
+          _brand = brand;
           _search.text = query;
           _load(reset: true);
           if (focus) _focus.requestFocus();
@@ -88,6 +90,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
     try {
       final r = await context.read<ApiClient>().get('/equipment', {
         'category': _cat,
+        'brand': _brand,
         'q': _search.text.trim(),
         'sort': _sort,
         'page': _page,
@@ -126,7 +129,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('تصفّح المعدات', style: Txt.title),
+                    Text('تصفّح المعدات', style: Txt.title),
                     const SizedBox(height: 14),
                     Container(
                       height: 54,
@@ -134,14 +137,14 @@ class _BrowseScreenState extends State<BrowseScreen> {
                       decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(18)),
                       child: Row(
                         children: [
-                          const Icon(Icons.search_rounded, color: C.muted, size: 21),
+                          Icon(Icons.search_rounded, color: C.muted, size: 21),
                           const SizedBox(width: 8),
                           Expanded(
                             child: TextField(
                               controller: _search,
                               focusNode: _focus,
                               textInputAction: TextInputAction.search,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: InputBorder.none,
                                 hintText: 'ALEXA، SkyPanel، Dolly…',
                                 hintStyle: TextStyle(color: C.muted, fontSize: 14),
@@ -157,7 +160,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                           if (_search.text.isNotEmpty)
                             IconButton(
                               tooltip: 'مسح',
-                              icon: const Icon(Icons.close_rounded, size: 18, color: C.muted),
+                              icon: Icon(Icons.close_rounded, size: 18, color: C.muted),
                               onPressed: () {
                                 _search.clear();
                                 _load(reset: true);
@@ -188,7 +191,39 @@ class _BrowseScreenState extends State<BrowseScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 child: Row(
                   children: [
-                    Expanded(child: Text(_loading && _items.isEmpty ? '' : '$_total معدة', style: Txt.muted)),
+                    Expanded(
+                      child: Row(children: [
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 250),
+                          child: Text(_loading && _items.isEmpty ? '' : '$_total معدة', key: ValueKey('$_total$_loading'), style: Txt.muted),
+                        ),
+                        if (_brand.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Reveal(
+                              key: ValueKey(_brand),
+                              scale: true,
+                              offset: Offset.zero,
+                              child: Pressable(
+                                onTap: () {
+                                  setState(() => _brand = '');
+                                  _load(reset: true);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                  decoration: BoxDecoration(color: C.ink, borderRadius: BorderRadius.circular(20)),
+                                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                    Flexible(child: Text(_brand, overflow: TextOverflow.ellipsis, textDirection: TextDirection.ltr, style: TextStyle(color: C.onInk, fontSize: 12.5, fontWeight: FontWeight.w600))),
+                                    const SizedBox(width: 6),
+                                    Icon(Icons.close_rounded, size: 15, color: C.onInk),
+                                  ]),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ]),
+                    ),
                     PopupMenuButton<String>(
                       initialValue: _sort,
                       tooltip: 'الترتيب',
@@ -232,7 +267,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                 padding: const EdgeInsets.all(24),
                 child: Center(
                   child: _loading && _items.isNotEmpty
-                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: C.ink))
+                      ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: C.ink))
                       : const SizedBox.shrink(),
                 ),
               ),
@@ -247,25 +282,25 @@ class _BrowseScreenState extends State<BrowseScreen> {
     final on = _cat == slug;
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 8),
-      child: Material(
-        color: on ? C.ink : C.surface,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            setState(() => _cat = slug);
-            _load(reset: true);
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: on ? Colors.white : C.ink)),
-                const SizedBox(width: 7),
-                Text('$count', style: TextStyle(fontSize: 11, color: on ? const Color(0xFFAAAAAA) : C.muted)),
-              ],
-            ),
+      child: Pressable(
+        scale: .93,
+        onTap: () {
+          setState(() => _cat = slug);
+          _load(reset: true);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: on ? C.ink : C.surface, borderRadius: BorderRadius.circular(20)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: on ? C.onInk : C.ink)),
+              const SizedBox(width: 7),
+              Text('$count', style: TextStyle(fontSize: 11, color: on ? C.inkMuted : C.muted)),
+            ],
           ),
         ),
       ),

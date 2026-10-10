@@ -4,8 +4,8 @@
  * - بيانات API (GET): من الشبكة أولاً، ومن الكاش عند انقطاع الإنترنت
  * - الطلبات وتسجيل الدخول (POST...): من الشبكة دائماً
  */
-const VERSION = 'gg-1.1.3';
-const SHELL = ['./', 'assets/app.css?v=1.1.3', 'assets/app.js?v=1.1.3', 'assets/brand/mark.png', 'assets/brand/icon-192.png', 'manifest.webmanifest'];
+const VERSION = 'gg-1.2.0';
+const SHELL = ['./', 'assets/app.css?v=1.2.0', 'assets/app.js?v=1.2.0', 'assets/brand/mark.png', 'assets/brand/icon-192.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION + '-shell').then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -47,7 +47,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;               // الخطوط وغيرها
   if (url.pathname.includes('/admin') || url.pathname.includes('/install')) return;
-  if (/\/api\/v1\/(auth|me|orders)/.test(url.pathname)) return; // بيانات الحساب لا تُحفظ
+  if (/\/api\/v1\/(auth|me|orders|notifications)/.test(url.pathname)) return; // بيانات الحساب والإشعارات لا تُحفظ
 
   if (req.mode === 'navigate') {
     e.respondWith(networkFirst(req, VERSION + '-shell').catch(() => caches.match('./')));

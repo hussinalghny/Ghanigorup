@@ -47,12 +47,12 @@ class _KitsScreenState extends State<KitsScreen> {
           if (snap.hasError) return ErrorView(snap.error!, onRetry: () => setState(() {
                 _future = _load();
               }));
-          if (!snap.hasData) return const Center(child: CircularProgressIndicator(color: C.ink));
+          if (!snap.hasData) return Center(child: CircularProgressIndicator(color: C.ink));
           final kits = snap.data!;
           return ListView(
             padding: EdgeInsets.only(bottom: 30 + MediaQuery.paddingOf(context).bottom),
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.fromLTRB(20, 4, 20, 0),
                 child: Text('مجموعات معدات مجرّبة لأنواع التصوير الأكثر طلباً. أضف الباقة كاملة ثم عدّل الكميات من صفحة الطلب.', style: Txt.muted),
               ),
@@ -74,7 +74,7 @@ class _KitsScreenState extends State<KitsScreen> {
                     ],
                   ),
                 ),
-                EquipmentRow(k.items),
+                EquipmentRow(k.items, heroPrefix: 'kit-${k.slug}'),
               ],
             ],
           );

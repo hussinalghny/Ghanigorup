@@ -32,7 +32,14 @@ const IC = {
   sys: '<rect x="3" y="3" width="14" height="5" rx="1.5"/><rect x="3" y="12" width="14" height="5" rx="1.5"/><path d="M6 5.5h.01M6 14.5h.01"/>',
   search: '<circle cx="9" cy="9" r="6"/><path d="m14 14 4 4"/>',
   menu: '<path d="M3 6h14M3 10h14M3 14h14"/>',
+  store: '<path d="M3 8 10 3l7 5v9H3z"/><path d="M7 17v-5h6v5"/>',
+  banner: '<rect x="2.5" y="4" width="15" height="10" rx="2"/><path d="m5 11 3-3 2.5 2.5L13 8l2.5 3M6 17h8"/>',
+  brand: '<path d="M10 2.5 12.2 7l5 .7-3.6 3.5.8 5L10 13.8 5.6 16.2l.8-5L2.8 7.7l5-.7z"/>',
+  bell: '<path d="M5 8a5 5 0 0 1 10 0c0 5 2 6 2 6H3s2-1 2-6M8.5 17a1.8 1.8 0 0 0 3 0"/>',
+  sign: '<path d="M3 15c2-1 3-5 5-5s0 5 2 5 2-3 3.5-3 1 2 3.5 2M3 18h14"/>',
 };
+const ROLE = { customer: 'عميل', staff: 'موظف', storekeeper: 'أمين مخزن', technician: 'فني', admin: 'مدير' };
+const can = p => !!S.user && (S.user.perms || []).some(x => x === '*' || x === p);
 const svg = (k, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
 
 /* ---------- API ---------- */
@@ -61,7 +68,7 @@ const fail = e => toast(e.message + (e.details && Object.keys(e.details).length 
 function drawer(title, body, foot = '') {
   const d = $('#drawer');
   d.innerHTML = `<div class="dh"><h2>${title}</h2><button class="x" id="dx" aria-label="إغلاق">×</button></div><div class="db">${body}</div>${foot ? `<div class="df">${foot}</div>` : ''}`;
-  d.classList.add('on'); $('#scrim').classList.add('on');
+  d.classList.remove('wide'); d.classList.add('on'); $('#scrim').classList.add('on');
   $('#dx').onclick = closeDrawer;
   return d;
 }
@@ -94,7 +101,7 @@ const S = { user: null, cats: [], page: 'dash' };
 function renderLogin(msg = '') {
   root.innerHTML = `<div class="login"><form class="box" id="lf">
     <div class="logo"><img src="assets/brand/mark.png" alt="" width="28" height="28">Ghani Group</div>
-    <h1>لوحة التحكم</h1><p>${h(msg || 'سجّل الدخول بحساب المدير أو الموظف')}</p>
+    <h1>لوحة التحكم</h1><p>${h(msg || 'سجّل الدخول بحساب المدير أو الموظف أو أمين المخزن')}</p>
     <div class="fm"><div class="f"><label>البريد الإلكتروني</label><input name="email" type="email" dir="ltr" autocomplete="username" required></div>
     <div class="f"><label>كلمة المرور</label><input name="password" type="password" dir="ltr" autocomplete="current-password" required></div>
     <button class="btn block">دخول</button></div>
@@ -104,40 +111,46 @@ function renderLogin(msg = '') {
     const b = $('#lf button'); b.disabled = true;
     try {
       const r = await api('/auth/login', { method: 'POST', body: val(e.target) });
-      if (!['admin', 'staff'].includes(r.data.user.role)) { await api('/auth/logout', { method: 'POST' }); throw new Error('هذا الحساب ليس لديه صلاحية لوحة التحكم'); }
+      if (!['admin', 'staff', 'storekeeper'].includes(r.data.user.role)) { await api('/auth/logout', { method: 'POST' }); throw new Error('هذا الحساب ليس لديه صلاحية لوحة التحكم'); }
       S.user = r.data.user; shell();
     } catch (err) { b.disabled = false; toast(err.message, true); }
   };
 }
 
 /* ---------- shell ---------- */
+// [المسار، الاسم، الأيقونة، الصلاحية المطلوبة]
 const NAV = [
-  ['dash', 'الرئيسية', 'dash'], ['orders', 'الطلبات', 'orders'], ['equipment', 'المعدات', 'eq'], ['categories', 'الأقسام', 'cats'],
-  ['kits', 'الباقات', 'kits'], ['users', 'المستخدمون', 'users', 1], ['import', 'استيراد وتصدير', 'imp', 1], ['settings', 'الإعدادات', 'set', 1], ['system', 'النظام والسجل', 'sys', 1],
+  ['dash', 'الرئيسية', 'dash', 'dashboard'], ['orders', 'الطلبات', 'orders', 'orders.view'], ['store', 'المخزن — تسليم وإرجاع', 'store', 'handover'],
+  ['equipment', 'المعدات', 'eq', 'equipment.edit'], ['categories', 'الأقسام', 'cats', 'catalog.edit'], ['kits', 'الباقات', 'kits', 'catalog.edit'],
+  ['brands', 'الماركات', 'brand', 'brands'], ['banners', 'البنرات الإعلانية', 'banner', 'banners'], ['notifications', 'الإشعارات', 'bell', 'notifications'],
+  ['users', 'المستخدمون', 'users', 'admin'], ['import', 'استيراد وتصدير', 'imp', 'admin'], ['settings', 'الإعدادات', 'set', 'admin'], ['system', 'النظام والسجل', 'sys', 'admin'],
 ];
+const navOk = n => n[3] === 'admin' ? S.user.role === 'admin' : can(n[3]);
 function shell() {
-  const admin = S.user.role === 'admin';
   root.innerHTML = `<div class="shell"><nav class="side" id="side">
       <div class="logo"><img src="assets/brand/mark.png" alt="" width="28" height="28">Ghani Group</div>
-      ${NAV.filter(n => admin || !n[3]).map(n => `<a href="admin#/${n[0]}" data-p="${n[0]}">${svg(n[2])}${n[1]}${n[0] === 'orders' ? '<span class="n" id="pendN" hidden></span>' : ''}</a>`).join('')}
-      <div class="me"><b>${h(S.user.name)}</b>${S.user.role === 'admin' ? 'مدير' : 'موظف'} · <button id="out">خروج</button> · <a href="./" target="_blank">الموقع</a></div>
+      ${NAV.filter(navOk).map(n => `<a href="admin#/${n[0]}" data-p="${n[0]}">${svg(n[2])}${n[1]}${n[0] === 'orders' ? '<span class="n" id="pendN" hidden></span>' : ''}${n[0] === 'store' ? '<span class="n" id="storeN" hidden></span>' : ''}</a>`).join('')}
+      <div class="me"><b>${h(S.user.name)}</b>${ROLE[S.user.role] || ''} · <button id="out">خروج</button> · <a href="./" target="_blank">الموقع</a></div>
     </nav><main><div class="mtop"><div class="logo"><img src="assets/brand/mark.png" alt="" width="28" height="28">لوحة التحكم</div><button id="menu" aria-label="القائمة">${svg('menu')}</button></div><div id="page"></div></main></div>`;
   $('#out').onclick = async () => { try { await api('/auth/logout', { method: 'POST' }); } catch (e) { /* ignore */ } S.user = null; renderLogin('تم تسجيل الخروج'); };
   $('#menu').onclick = () => $('#side').classList.toggle('open');
   route();
+  updateStoreBadge();
 }
 const page = () => $('#page');
 const head = (t, acts = '') => `<div class="head"><h1>${t}</h1><div class="acts">${acts}</div></div>`;
 
 async function route() {
   if (!S.user) return;
-  const [p, qs] = (location.hash.replace(/^#\/?/, '') || 'dash').split('?');
+  let [p, qs] = (location.hash.replace(/^#\/?/, '') || (S.user.role === 'storekeeper' ? 'store' : 'dash')).split('?');
+  const nav = NAV.find(n => n[0] === p);
+  if (nav && !navOk(nav)) p = S.user.role === 'storekeeper' ? 'store' : 'dash';
   S.page = p;
   $$('#side a').forEach(a => a.classList.toggle('on', a.dataset.p === p));
   $('#side')?.classList.remove('open');
   closeDrawer();
   page().innerHTML = '<div class="skel"></div>';
-  const views = { dash: vDash, orders: vOrders, equipment: vEquipment, categories: vCategories, kits: vKits, users: vUsers, import: vImport, settings: vSettings, system: vSystem };
+  const views = { dash: vDash, orders: vOrders, store: vStore, equipment: vEquipment, categories: vCategories, kits: vKits, brands: vBrands, banners: vBanners, notifications: vNotifications, users: vUsers, import: vImport, settings: vSettings, system: vSystem };
   try { await (views[p] || vDash)(new URLSearchParams(qs || '')); }
   catch (e) { if (e.status !== 401) page().innerHTML = `<div class="empty"><b>تعذر التحميل</b>${h(e.message)}</div>`; }
 }
@@ -158,7 +171,7 @@ async function vDash() {
       <a class="kpi" href="admin#/orders?status=confirmed"><small>حجوزات مؤكدة</small><b>${st.confirmed || 0}</b><span>${st.quoted || 0} بانتظار رد العميل</span></a>
       <a class="kpi" href="admin#/orders?status=out"><small>معدات عند العملاء</small><b>${num(d.out_now)}</b><span>وحدة الآن</span></a>
       <a class="kpi" href="admin#/equipment"><small>الأسطول</small><b>${num(d.equipment_units)}</b><span>${d.equipment_items} صنف</span></a>
-      <a class="kpi" href="admin#/users"><small>العملاء</small><b>${num(d.customers)}</b><span>حساب مسجّل</span></a>
+      <a class="kpi" href="${S.user.role === 'admin' ? 'admin#/users' : 'admin#/dash'}"><small>العملاء</small><b>${num(d.customers)}</b><span>حساب مسجّل</span></a>
     </div>
     <div class="grid3">
       <div class="card"><h3>الطلبات اليومية <small>آخر 30 يوم · ${num(d.orders_30d.reduce((a, b) => a + b.orders, 0))} طلب</small></h3>
@@ -211,11 +224,16 @@ async function vOrders(params) {
 async function openOrder(id, reload) {
   const { data: o } = await api('/admin/orders/' + id);
   let status = o.status;
+  const edit = can('orders.edit');
   const wa = String(o.phone).replace(/\D/g, '').replace(/^0/, '964');
+  const canOut = can('handover') && ['pending', 'quoted', 'confirmed'].includes(o.status);
+  const canRet = can('handover') && o.status === 'out';
   const d = drawer(`طلب <span class="ltr">${h(o.ref)}</span>`, `
-    <div class="statusbar" id="sb">${Object.keys(STATUS).map(s => `<button data-s="${s}" class="${s === o.status ? 'on' : ''}">${SHORT[s]}</button>`).join('')}</div>
+    ${edit ? `<div class="statusbar" id="sb">${Object.keys(STATUS).map(s => `<button data-s="${s}" class="${s === o.status ? 'on' : ''}">${SHORT[s]}</button>`).join('')}</div>` : chip(o.status)}
     <p class="muted" style="font-size:12px;margin-top:8px">الحالية: ${STATUS[o.status][0]} · آخر تحديث ${fdt(o.updated_at)}</p>
+    ${canOut || canRet ? `<div class="hoact">${canOut ? `<button class="btn" id="doOut">${svg('sign', 18)} تسليم المعدات للعميل بالتوقيع</button>` : ''}${canRet ? `<button class="btn" id="doRet">${svg('sign', 18)} استلام المعدات المُرجَعة بالتوقيع</button>` : ''}</div>` : ''}
     ${o.shortages.length ? `<div class="alert warn" style="margin-top:12px"><b>تعارض في التوفر</b><br>${o.shortages.map(s => `• ${h(s.name)}: مطلوب ${s.requested} — متاح ${s.available}`).join('<br>')}</div>` : (['pending', 'quoted'].includes(o.status) ? '<div class="alert ok" style="margin-top:12px">كل المعدات متوفرة في هذه الفترة ✓</div>' : '')}
+    ${o.handovers.length ? `<div class="sect">محاضر التسليم والإرجاع</div><div class="list card" style="padding:4px 14px">${o.handovers.map(x => `<div class="lr"><div class="t"><b>${x.type === 'checkout' ? 'تسليم للعميل' : 'إرجاع'} — ${h(x.receiver_name)}</b><small>${fdt(x.created_at)} · الموظف: ${h(x.employee_name)}${x.technician_name ? ' · الفني: ' + h(x.technician_name) : ''}</small></div><button class="btn lt sm" data-ho="${x.id}">عرض / طباعة</button></div>`).join('')}</div>` : ''}
     <div class="sect">العميل والمشروع</div>
     <div class="info"><div><small>الاسم</small><b>${h(o.contact_name)}</b></div><div><small>الهاتف</small><b class="ltr">${h(o.phone)}</b></div>
       <div><small>المشروع</small><b>${h(o.project || '—')}</b></div><div><small>الموقع</small><b>${h(o.location || '—')}</b></div>
@@ -223,13 +241,17 @@ async function openOrder(id, reload) {
     ${o.notes ? `<div class="sect">ملاحظات العميل</div><div class="card" style="padding:14px">${h(o.notes)}</div>` : ''}
     <div class="sect">المعدات (${o.items.reduce((a, b) => a + b.qty, 0)} قطعة)</div>
     <div class="card oitems" style="padding:6px 14px"><div class="list">${o.items.map(i => `<div class="lr"><img src="${h(i.image || '')}" alt=""><div class="t"><b class="ltr" style="text-align:right">${h(i.name)}</b><small>${h(i.brand)}</small></div><b>×${i.qty}</b></div>`).join('')}</div></div>
-    <div class="sect">التسعير والملاحظات الداخلية</div>
+    ${edit ? `<div class="sect">التسعير والملاحظات الداخلية</div>
     <form class="fm" id="of"><div class="row"><div class="f"><label>مبلغ عرض السعر</label><input name="quote_amount" inputmode="decimal" dir="ltr" value="${o.quote_amount ?? ''}"></div>
       <div class="f"><label>تعديل التواريخ</label><div style="display:flex;gap:6px"><input type="date" name="start_date" value="${o.start_date}"><input type="date" name="end_date" value="${o.end_date}"></div></div></div>
       <div class="f"><label>ملاحظات داخلية (لا تظهر للعميل)</label><textarea name="admin_notes" rows="3">${h(o.admin_notes || '')}</textarea></div></form>
+    <p class="muted" style="font-size:11.5px;margin-top:10px">تغيير الحالة يرسل إشعاراً للعميل في التطبيق تلقائياً.</p>` : (o.admin_notes ? `<div class="sect">ملاحظات داخلية</div><div class="card" style="padding:14px">${h(o.admin_notes)}</div>` : '')}
     <p class="muted" style="font-size:11.5px;margin-top:10px">IP: <span class="ltr">${h(o.ip || '')}</span> · أُنشئ ${fdt(o.created_at)}${o.user_id ? ' · عميل مسجّل #' + o.user_id : ' · بدون حساب'}</p>`,
-    `<button class="btn" id="save">حفظ</button><a class="btn lt" target="_blank" rel="noopener" href="https://wa.me/${h(wa)}?text=${encodeURIComponent('مرحباً ' + o.contact_name + '، بخصوص طلبك ' + o.ref + ' من Ghani Group')}">واتساب العميل</a>`);
+    `${edit ? '<button class="btn" id="save">حفظ</button>' : ''}<a class="btn lt" target="_blank" rel="noopener" href="https://wa.me/${h(wa)}?text=${encodeURIComponent('مرحباً ' + o.contact_name + '، بخصوص طلبك ' + o.ref + ' من Ghani Group')}">واتساب العميل</a>`);
   $$('#sb button', d).forEach(b => b.onclick = () => { status = b.dataset.s; $$('#sb button', d).forEach(x => x.classList.toggle('on', x === b)); });
+  $$('[data-ho]', d).forEach(b => b.onclick = () => printHandover(o, o.handovers.find(x => x.id === +b.dataset.ho)));
+  if ($('#doOut')) $('#doOut').onclick = () => handoverForm(o, 'checkout', reload);
+  if ($('#doRet')) $('#doRet').onclick = () => handoverForm(o, 'return', reload);
   const save = async (force = false) => {
     const body = val($('#of')); body.status = status; if (force) body.force = true;
     try { await api('/admin/orders/' + id, { method: 'PATCH', body }); toast('تم حفظ الطلب'); closeDrawer(); reload && reload(); }
@@ -238,7 +260,169 @@ async function openOrder(id, reload) {
       if (e.code !== 'shortage') fail(e);
     }
   };
-  $('#save').onclick = () => save();
+  if ($('#save')) $('#save').onclick = () => save();
+}
+
+/* ---------- التوقيع الإلكتروني ---------- */
+function sigPad(host, label) {
+  host.innerHTML = `<div class="sig"><canvas></canvas><span class="sig-ph">${h(label)}</span><button type="button" class="sig-clr">مسح</button><i class="sig-line"></i></div>`;
+  const box = $('.sig', host), c = $('canvas', box), ctx = c.getContext('2d');
+  let pts = [], drawing = false, empty = true, lastW = 2.6;
+  const fit = () => {
+    const r = box.getBoundingClientRect(), dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#141414'; ctx.fillStyle = '#141414';
+  };
+  requestAnimationFrame(fit);
+  const pos = e => { const r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }; };
+  c.addEventListener('pointerdown', e => {
+    e.preventDefault(); if (!c.width) fit();
+    c.setPointerCapture(e.pointerId); drawing = true; pts = [pos(e)]; lastW = 2.6;
+    if (empty) { empty = false; box.classList.add('on'); }
+    const p = pts[0]; ctx.beginPath(); ctx.arc(p.x, p.y, 1.3, 0, Math.PI * 2); ctx.fill();
+  });
+  c.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of events) {
+      const p = pos(ev), q = pts[pts.length - 1];
+      const dist = Math.hypot(p.x - q.x, p.y - q.y); if (dist < 1) continue;
+      const speed = dist / Math.max(1, p.t - q.t);
+      const w = Math.max(1.2, Math.min(3.4, 3.6 - speed * 1.1)); lastW = lastW * .7 + w * .3;
+      pts.push(p);
+      const n = pts.length; if (n < 3) continue;
+      const a = pts[n - 3], b = pts[n - 2];
+      ctx.lineWidth = lastW; ctx.beginPath();
+      ctx.moveTo((a.x + b.x) / 2, (a.y + b.y) / 2); ctx.quadraticCurveTo(b.x, b.y, (b.x + p.x) / 2, (b.y + p.y) / 2); ctx.stroke();
+    }
+  });
+  const end = () => { drawing = false; };
+  c.addEventListener('pointerup', end); c.addEventListener('pointercancel', end);
+  $('.sig-clr', box).onclick = () => { ctx.clearRect(0, 0, c.width, c.height); empty = true; box.classList.remove('on'); };
+  return { isEmpty: () => empty, data: () => (empty ? '' : c.toDataURL('image/png')) };
+}
+
+let staffCache = null;
+async function handoverForm(o, type, reload) {
+  const out = type === 'checkout';
+  if (!staffCache) staffCache = (await api('/admin/staff')).data;
+  const techs = staffCache.filter(u => u.role === 'technician');
+  const emps = staffCache.filter(u => u.role !== 'technician');
+  const cond = i => out ? '' : `<select data-c="${i.equipment_id}"><option value="ok">سليمة</option><option value="damaged">متضررة</option><option value="missing">ناقصة</option></select>`;
+  const d = drawer(out ? 'محضر تسليم معدات' : 'محضر إرجاع معدات', `
+    <div class="alert ${out ? 'ok' : 'warn'}">${out ? 'افحص القطع مع العميل، أشّر على المسلَّم منها، ثم يوقّع المستلم.' : 'افحص كل قطعة مُرجَعة وحدد حالتها، ثم يوقّع الشخص الذي أرجعها.'} الطلب <b class="ltr">${h(o.ref)}</b> — ${h(o.project || o.contact_name)}</div>
+    <div class="sect">القطع (${o.items.length})</div>
+    <div class="hoitems">${o.items.map(i => `<label class="hoi"><input type="checkbox" data-e="${i.equipment_id}" checked><img src="${h(i.image || '')}" alt=""><span class="t"><b class="ltr">${h(i.name)}</b><small>${h(i.brand)} · المطلوب ${i.qty}</small></span>
+      <input type="number" min="0" max="${i.qty}" value="${i.qty}" data-q="${i.equipment_id}" aria-label="الكمية">${cond(i)}<input data-n="${i.equipment_id}" placeholder="ملاحظة" class="hon"></label>`).join('')}</div>
+    <form class="fm" id="hf" style="margin-top:14px">
+      <div class="row"><div class="f"><label>${out ? 'اسم المستلم (من طرف العميل)' : 'اسم الشخص الذي أرجع المعدات'}</label><input name="receiver_name" value="${h(o.contact_name)}"></div>
+        <div class="f"><label>هاتفه</label><input name="receiver_phone" dir="ltr" value="${h(o.phone)}"></div></div>
+      <div class="row"><div class="f"><label>الموظف المسؤول</label><select name="employee_id">${emps.map(u => `<option value="${u.id}" ${u.id === S.user.id ? 'selected' : ''}>${h(u.name)} — ${ROLE[u.role]}</option>`).join('')}</select></div>
+        <div class="f"><label>${out ? 'الفني الذي خرج مع المعدات' : 'الفني المرافق'}</label><select name="technician_id"><option value="">${o.technician ? '— اختر الفني —' : 'بدون فني'}</option>${techs.map(u => `<option value="${u.id}">${h(u.name)}</option>`).join('')}<option value="other">اسم آخر…</option></select></div></div>
+      <div class="f" id="tnBox" hidden><label>اسم الفني</label><input name="technician_name"></div>
+      <div class="f"><label>ملاحظات ${out ? 'التسليم' : 'الإرجاع'}</label><textarea name="notes" rows="2" placeholder="${out ? 'مثلاً: البطاريات مشحونة، الكارت فارغ' : 'مثلاً: خدش على الغطاء'}"></textarea></div>
+    </form>
+    <div class="sect">توقيع ${out ? 'المستلم' : 'المُرجِع'} *</div><div id="sig1"></div>
+    <details class="sigmore"><summary>إضافة توقيع الموظف (اختياري)</summary><div id="sig2" style="margin-top:8px"></div></details>
+    <p class="muted" style="font-size:11.5px;margin-top:10px">يُحفظ التوقيع مع التاريخ والوقت واسم الموظف وعنوان IP، ولا يمكن تعديل المحضر بعد حفظه. ${out ? 'حالة الطلب ستصبح "مُسلَّم".' : 'حالة الطلب ستصبح "مُرجَع".'}</p>`,
+    `<button class="btn" id="hsave">${svg('sign', 18)} حفظ المحضر</button><button class="btn lt" id="hback" style="flex:none">رجوع</button>`);
+  d.classList.add('wide');
+  const p1 = sigPad($('#sig1'), out ? 'وقّع هنا — المستلم' : 'وقّع هنا — المُرجِع');
+  let p2 = null;
+  $('.sigmore', d).addEventListener('toggle', e => { if (e.target.open && !p2) p2 = sigPad($('#sig2'), 'توقيع الموظف'); });
+  $('[name=technician_id]', d).onchange = e => { $('#tnBox').hidden = e.target.value !== 'other'; };
+  $$('.hoi input[type=checkbox]', d).forEach(cb => cb.onchange = () => cb.closest('.hoi').classList.toggle('off', !cb.checked));
+  $('#hback').onclick = () => openOrder(o.id, reload);
+  const submit = async (force = false) => {
+    if (p1.isEmpty()) { toast('التوقيع مطلوب', true); $('#sig1').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    const f = val($('#hf'));
+    const body = { type, receiver_name: f.receiver_name, receiver_phone: f.receiver_phone, employee_id: +f.employee_id || undefined, notes: f.notes, signature: p1.data() };
+    if (f.technician_id === 'other') body.technician_name = f.technician_name; else if (f.technician_id) body.technician_id = +f.technician_id;
+    if (p2 && !p2.isEmpty()) body.employee_signature = p2.data();
+    if (force) body.force = true;
+    body.items = $$('.hoi', d).map(row => {
+      const id = +$('[data-e]', row).dataset.e, checked = $('[data-e]', row).checked;
+      return { equipment_id: id, qty: checked ? +$('[data-q]', row).value : 0, condition: out ? 'ok' : (checked ? $('[data-c]', row).value : 'missing'), note: $('[data-n]', row).value };
+    }).filter(x => out ? x.qty > 0 : true);
+    const btn = $('#hsave'); btn.disabled = true;
+    try {
+      const r = await api(`/admin/orders/${o.id}/handover`, { method: 'POST', body });
+      toast(out ? 'تم التسليم وحفظ المحضر ✓' : 'تم استلام الإرجاع وحفظ المحضر ✓');
+      reload && reload();
+      updateStoreBadge();
+      const fresh = (await api('/admin/orders/' + o.id)).data;
+      printHandover(fresh, r.data);
+      openOrder(o.id, reload);
+    } catch (e) {
+      btn.disabled = false;
+      if (e.code === 'shortage' && confirm('الكمية غير متوفرة لبعض القطع في هذه الفترة:\n' + e.details.shortages.map(s => `${s.name}: مطلوب ${s.requested}، متاح ${s.available}`).join('\n') + '\n\nالتسليم رغم ذلك؟')) return submit(true);
+      if (e.code !== 'shortage') { markErrors($('#hf'), e.details); fail(e); }
+    }
+  };
+  $('#hsave').onclick = () => submit();
+}
+
+/* محضر قابل للطباعة مع صور التواقيع (تُجلب من API محمي) */
+async function printHandover(o, x) {
+  const sigUrl = async who => {
+    try {
+      const res = await fetch(`${API}/admin/handovers/${x.id}/signature?who=${who}`, { credentials: 'same-origin', headers: { 'X-Client': 'web' } });
+      return res.ok ? URL.createObjectURL(await res.blob()) : '';
+    } catch (e) { return ''; }
+  };
+  const [s1, s2] = await Promise.all([sigUrl('customer'), x.has_employee_signature ? sigUrl('employee') : Promise.resolve('')]);
+  const out = x.type === 'checkout';
+  const CND = { ok: 'سليمة', damaged: 'متضررة', missing: 'ناقصة' };
+  let el = $('#print');
+  if (!el) { el = document.createElement('div'); el.id = 'print'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="pbar"><button class="btn" id="pp">طباعة / حفظ PDF</button><button class="btn lt" id="pc">إغلاق</button></div>
+  <article class="paper">
+    <header><img src="assets/brand/mark.png" alt=""><div><b>Ghani Group</b><small>قسم تأجير المعدات</small></div><div class="pt"><b>${out ? 'محضر تسليم معدات' : 'محضر إرجاع معدات'}</b><small>رقم المحضر #${x.id} · ${fdt(x.created_at)}</small></div></header>
+    <div class="pgrid"><div><small>رقم الطلب</small><b class="ltr">${h(o.ref)}</b></div><div><small>العميل</small><b>${h(o.contact_name)}</b></div><div><small>المشروع</small><b>${h(o.project || '—')}</b></div>
+      <div><small>مدة الإيجار</small><b>${fd(o.start_date)} ← ${fd(o.end_date)} (${o.days} يوم)</b></div><div><small>الموظف المسؤول</small><b>${h(x.employee_name)}</b></div><div><small>الفني المرافق</small><b>${h(x.technician_name || '—')}</b></div></div>
+    <table><thead><tr><th>#</th><th>القطعة</th><th>المطلوب</th><th>${out ? 'المسلَّم' : 'المُرجَع'}</th>${out ? '' : '<th>الحالة</th>'}<th>ملاحظة</th></tr></thead><tbody>
+      ${x.items.map((i, n) => `<tr><td>${n + 1}</td><td><b class="ltr">${h(i.name)}</b><small>${h(i.brand)}</small></td><td>${i.ordered}</td><td>${i.qty}</td>${out ? '' : `<td class="c-${i.condition}">${CND[i.condition]}</td>`}<td>${h(i.note || '')}</td></tr>`).join('')}
+    </tbody></table>
+    ${x.notes ? `<p class="pnote"><b>ملاحظات:</b> ${h(x.notes)}</p>` : ''}
+    <p class="pdecl">${out ? 'أقرّ أنا الموقّع أدناه باستلام المعدات المذكورة أعلاه بحالة سليمة وصالحة للعمل، وأتحمّل مسؤولية المحافظة عليها وإعادتها في الموعد المحدد.' : 'تم استلام المعدات المذكورة أعلاه وفحصها بحضور الطرفين وتسجيل حالتها كما هو مبيّن.'}</p>
+    <div class="psig"><div><small>${out ? 'توقيع المستلم' : 'توقيع المُرجِع'}</small>${s1 ? `<img src="${s1}" alt="التوقيع">` : '<i></i>'}<b>${h(x.receiver_name)}</b><span class="ltr">${h(x.receiver_phone || '')}</span></div>
+      <div><small>توقيع الموظف المسؤول</small>${s2 ? `<img src="${s2}" alt="">` : '<i></i>'}<b>${h(x.employee_name)}</b></div></div>
+    <footer>وثيقة إلكترونية صادرة من نظام Ghani Group — ${new Date().toLocaleString('en-GB')}</footer>
+  </article>`;
+  el.classList.add('on');
+  $('#pp').onclick = () => window.print();
+  $('#pc').onclick = () => { el.classList.remove('on'); [s1, s2].forEach(u => u && URL.revokeObjectURL(u)); };
+}
+
+/* ---------- المخزن: لوحة التسليم والإرجاع ---------- */
+async function updateStoreBadge() {
+  if (!can('handover') || !$('#storeN')) return;
+  try {
+    const { data } = await api('/admin/handovers/board');
+    const n = data.to_checkout.filter(o => o.days_left <= 0 && o.status === 'confirmed').length + data.to_return.filter(o => o.days_left < 0).length;
+    $('#storeN').textContent = n; $('#storeN').hidden = !n;
+  } catch (e) { /* ignore */ }
+}
+async function vStore() {
+  const [{ data: b }, { data: log }] = await Promise.all([api('/admin/handovers/board'), api('/admin/handovers')]);
+  const when = o => {
+    const n = o.days_left;
+    if (o.status === 'out') return n < 0 ? `<span class="chip red"><i></i>متأخر ${-n} يوم</span>` : (n === 0 ? '<span class="chip warn"><i></i>يُرجَع اليوم</span>' : `<span class="chip"><i></i>بعد ${n} يوم</span>`);
+    return n < 0 ? `<span class="chip red"><i></i>فات موعده ${-n} يوم</span>` : (n === 0 ? '<span class="chip warn"><i></i>اليوم</span>' : `<span class="chip"><i></i>بعد ${n} يوم</span>`);
+  };
+  const row = o => `<a class="lr" href="admin#/store?open=${o.id}" data-o="${o.id}"><div class="t"><b>${h(o.project || o.contact_name)}</b><small class="ltr">${h(o.ref)}</small> <small>· ${o.units} قطعة · ${fd(o.start_date)} ← ${fd(o.end_date)}${+o.technician ? ' · فني مرافق' : ''}</small></div>${o.status !== 'out' ? chip(o.status) : ''}${when(o)}</a>`;
+  page().innerHTML = head('المخزن — التسليم والإرجاع') + `<div class="grid2">
+    <div class="card"><h3>للتسليم خلال 7 أيام <small>${b.to_checkout.length} طلب</small></h3><div class="list">${b.to_checkout.map(row).join('') || '<div class="empty" style="padding:24px">لا توجد طلبات للتسليم</div>'}</div></div>
+    <div class="card"><h3>عند العملاء — بانتظار الإرجاع <small>${b.to_return.length} طلب</small></h3><div class="list">${b.to_return.map(row).join('') || '<div class="empty" style="padding:24px">لا توجد معدات خارج المخزن</div>'}</div></div></div>
+    <div class="card" style="margin-top:14px"><h3>سجل المحاضر <small>آخر 300</small></h3><div class="tbl" style="box-shadow:none"><table><thead><tr><th>الوقت</th><th>النوع</th><th>الطلب</th><th>المستلم/المُرجِع</th><th>الموظف</th><th>الفني</th><th>ملاحظات القطع</th></tr></thead><tbody>
+      ${log.map(x => `<tr data-x="${x.id}"><td class="sub">${fdt(x.created_at)}</td><td>${x.type === 'checkout' ? '<span class="chip ok"><i></i>تسليم</span>' : '<span class="chip ink">إرجاع</span>'}</td><td><b class="ltr">${h(x.ref)}</b><div class="sub">${h(x.project || x.contact_name)}</div></td><td>${h(x.receiver_name)}</td><td>${h(x.employee_name)}</td><td>${h(x.technician_name || '—')}</td><td class="sub">${x.items.filter(i => i.condition !== 'ok' || i.qty < i.ordered).map(i => h(i.name) + ': ' + ({ damaged: 'متضررة', missing: 'ناقصة', ok: 'ناقصة العدد' }[i.condition])).join('، ') || '—'}</td></tr>`).join('') || '<tr><td colspan="7"><div class="empty">لا توجد محاضر بعد</div></td></tr>'}
+    </tbody></table></div></div>`;
+  const reload = () => vStore();
+  $$('[data-o]').forEach(a => a.onclick = e => { e.preventDefault(); openOrder(+a.dataset.o, reload); });
+  $$('tr[data-x]').forEach(tr => tr.onclick = async () => { const x = log.find(l => l.id === +tr.dataset.x); const { data: o } = await api('/admin/orders/' + x.order_id); printHandover(o, x); });
+  updateStoreBadge();
+  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  if (q.get('open')) openOrder(+q.get('open'), reload);
 }
 
 /* ---------- equipment ---------- */
@@ -246,6 +430,7 @@ async function loadCats() { S.cats = (await api('/admin/categories')).data; retu
 
 async function vEquipment(params) {
   await loadCats();
+  api('/admin/brands').then(r => { S.brands = r.data; }).catch(() => {});
   const st = { cat: params.get('cat') || '', q: '', active: '' };
   page().innerHTML = head('المعدات', '<button class="btn" id="addE">+ معدة جديدة</button>') + `<div class="filters">
     <label class="search">${svg('search', 16)}<input id="eq" placeholder="ابحث بالاسم أو الماركة"></label>
@@ -280,10 +465,10 @@ function editEquipment(e, reload) {
       <label class="btn ghost sm" style="cursor:pointer">+ صورة إضافية<input type="file" accept="image/*" id="upG" hidden data-skip="1"></label></div></div>
       <div class="gal" id="gal"></div>`}
     <form class="fm" id="ef" style="margin-top:14px">
-      <div class="row"><div class="f"><label>الماركة</label><input name="brand" value="${h(e.brand)}" required></div><div class="f"><label>الاسم / الموديل</label><input name="name" value="${h(e.name)}" required></div></div>
+      <div class="row"><div class="f"><label>الماركة</label><input name="brand" value="${h(e.brand)}" list="brandList" required><datalist id="brandList">${(S.brands || []).map(b => `<option value="${h(b.name)}">`).join('')}</datalist></div><div class="f"><label>الاسم / الموديل</label><input name="name" value="${h(e.name)}" required></div></div>
       <div class="row"><div class="f"><label>القسم</label><select name="category_id">${S.cats.map(c => `<option value="${c.id}" ${c.id === e.category_id ? 'selected' : ''}>${h(c.name_ar)}</option>`).join('')}</select></div>
         <div class="f"><label>الكمية في الأسطول</label><input name="qty_total" type="number" min="0" value="${e.qty_total}"></div></div>
-      <div class="row"><div class="f"><label>سعر اليوم (داخلي)</label><input name="daily_rate" inputmode="decimal" dir="ltr" value="${e.daily_rate ?? ''}"></div>
+      <div class="row">${can('orders.price') ? `<div class="f"><label>سعر اليوم (داخلي)</label><input name="daily_rate" inputmode="decimal" dir="ltr" value="${e.daily_rate ?? ''}"></div>` : ''}
         <div class="f"><label>الترتيب</label><input name="sort" type="number" value="${e.sort || 0}"></div></div>
       <div class="f"><label>المعرّف في الرابط (slug)</label><input name="slug" dir="ltr" value="${h(e.slug || '')}" placeholder="يُولَّد تلقائياً"></div>
       <div class="f"><label>الوصف</label><textarea name="description" rows="3">${h(e.description || '')}</textarea></div>
@@ -373,27 +558,27 @@ async function vKits() {
 /* ---------- users ---------- */
 async function vUsers() {
   const st = { q: '', role: '' };
-  page().innerHTML = head('المستخدمون', '<button class="btn" id="addU">+ موظف / مدير</button>') + `<div class="filters"><label class="search">${svg('search', 16)}<input id="uq" placeholder="الاسم، البريد، الهاتف"></label>
-    <div class="seg" id="ur"><button data-r="" class="on">الكل</button><button data-r="customer">عملاء</button><button data-r="staff">موظفون</button><button data-r="admin">مدراء</button></div></div>
+  page().innerHTML = head('المستخدمون', '<button class="btn" id="addU">+ موظف / أمين مخزن / فني</button>') + `<div class="filters"><label class="search">${svg('search', 16)}<input id="uq" placeholder="الاسم، البريد، الهاتف"></label>
+    <div class="seg" id="ur"><button data-r="" class="on">الكل</button><button data-r="customer">عملاء</button><button data-r="staff">موظفون</button><button data-r="storekeeper">أمناء مخزن</button><button data-r="technician">فنيون</button><button data-r="admin">مدراء</button></div></div>
     <div class="tbl"><table><thead><tr><th>المستخدم</th><th>الهاتف</th><th>الدور</th><th>الطلبات</th><th>آخر دخول</th><th>الحالة</th></tr></thead><tbody id="ub"></tbody></table></div>`;
-  const ROLE = { customer: 'عميل', staff: 'موظف', admin: 'مدير' };
   const load = async () => {
     const { data } = await api('/admin/users', { query: st });
     $('#ub').innerHTML = data.map(u => `<tr data-id="${u.id}"><td><div class="nm">${h(u.name)}</div><div class="sub ltr" style="text-align:right">${h(u.email)}</div></td><td class="ltr" style="text-align:right">${h(u.phone || '—')}</td>
-      <td><span class="chip ${u.role === 'admin' ? 'ink' : ''}">${ROLE[u.role]}</span></td><td class="num">${u.orders}</td><td class="sub">${fdt(u.last_login_at)}</td>
+      <td><span class="chip ${u.role === 'admin' ? 'ink' : (u.role === 'storekeeper' ? 'warn' : (u.role === 'technician' ? 'ok' : ''))}">${ROLE[u.role] || h(u.role)}</span></td><td class="num">${u.orders}</td><td class="sub">${fdt(u.last_login_at)}</td>
       <td>${u.status === 'active' ? '<span class="chip ok"><i></i>فعّال</span>' : '<span class="chip red"><i></i>معطّل</span>'}</td></tr>`).join('') || '<tr><td colspan="6"><div class="empty"><b>لا نتائج</b></div></td></tr>';
     $$('#ub tr[data-id]').forEach(tr => tr.onclick = () => edit(data.find(u => u.id === +tr.dataset.id)));
   };
   const edit = u => {
     const isNew = !u;
-    drawer(isNew ? 'حساب موظف جديد' : h(u.name), `<form class="fm" id="uf">
-      ${isNew ? '<div class="f"><label>الاسم</label><input name="name"></div><div class="row"><div class="f"><label>البريد</label><input name="email" type="email" dir="ltr"></div><div class="f"><label>الهاتف</label><input name="phone" dir="ltr"></div></div>' : `<div class="info"><div><small>البريد</small><b class="ltr">${h(u.email)}</b></div><div><small>الشركة</small><b>${h(u.company || '—')}</b></div><div><small>تاريخ التسجيل</small><b>${fdt(u.created_at)}</b></div><div><small>الطلبات</small><b>${u.orders}</b></div></div>`}
+    drawer(isNew ? 'حساب جديد' : h(u.name), `<form class="fm" id="uf">
+      ${isNew ? '<div class="f"><label>الاسم</label><input name="name"></div><div class="row"><div class="f"><label>البريد</label><input name="email" type="email" dir="ltr"></div><div class="f"><label>الهاتف</label><input name="phone" dir="ltr"></div></div>' : `<div class="row"><div class="f"><label>الاسم</label><input name="name" value="${h(u.name)}"></div><div class="f"><label>الهاتف</label><input name="phone" dir="ltr" value="${h(u.phone || '')}"></div></div><div class="info"><div><small>البريد</small><b class="ltr">${h(u.email)}</b></div><div><small>الشركة</small><b>${h(u.company || '—')}</b></div><div><small>تاريخ التسجيل</small><b>${fdt(u.created_at)}</b></div><div><small>الطلبات</small><b>${u.orders}</b></div></div>`}
       <div class="row"><div class="f"><label>الدور</label><select name="role">${Object.entries(ROLE).map(([k, v]) => `<option value="${k}" ${(u?.role || 'staff') === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
       ${isNew ? '' : `<div class="f"><label>الحالة</label><select name="status"><option value="active" ${u.status === 'active' ? 'selected' : ''}>فعّال</option><option value="disabled" ${u.status === 'disabled' ? 'selected' : ''}>معطّل</option></select></div>`}</div>
       <div class="f"><label>${isNew ? 'كلمة المرور' : 'كلمة مرور جديدة (اتركها فارغة لعدم التغيير)'}</label><input name="password" type="password" autocomplete="new-password"></div>
+      <div class="alert ok" style="font-size:12px"><b>الصلاحيات:</b><br>• مدير: كل شيء.<br>• موظف: الطلبات والأسعار، الكتالوج، البنرات، الماركات، الإشعارات، التسليم والإرجاع.<br>• أمين مخزن: عرض الطلبات بدون أسعار، تسليم وإرجاع المعدات بالتوقيع، تعديل كميات المعدات.<br>• فني: لا يدخل اللوحة — يظهر اسمه لاختياره كفني مرافق عند التسليم.</div>
       <p class="muted" style="font-size:12px">تغيير الدور أو الحالة أو كلمة المرور يُنهي كل جلسات المستخدم.</p></form>`, '<button class="btn" id="save">حفظ</button>');
     $('#save').onclick = async () => {
-      const body = val($('#uf')); if (!body.password) delete body.password;
+      const body = val($('#uf')); if (!body.password) delete body.password; if (!isNew && !body.phone) delete body.phone;
       try { await api(isNew ? '/admin/users' : '/admin/users/' + u.id, { method: isNew ? 'POST' : 'PATCH', body }); toast('تم الحفظ'); closeDrawer(); load(); } catch (e) { markErrors($('#uf'), e.details); fail(e); }
     };
   };
@@ -446,16 +631,191 @@ async function vSettings() {
   const { data: s } = await api('/admin/settings');
   const F = [['company_name', 'اسم الشركة (EN)'], ['company_name_ar', 'اسم الشركة (عربي)'], ['phone', 'الهاتف', 1], ['whatsapp', 'واتساب الطلبات (بدون +)', 1], ['email', 'البريد', 1], ['website', 'الموقع', 1], ['instagram', 'Instagram', 1], ['facebook', 'Facebook', 1], ['currency', 'العملة', 1], ['notify_email', 'بريد استلام إشعارات الطلبات', 1],
     ['app_latest_version', 'التطبيق: آخر إصدار (مثل 1.0.0)', 1], ['app_min_version_ios', 'أقل إصدار مسموح — iOS (إجبار التحديث)', 1], ['app_min_version_android', 'أقل إصدار مسموح — Android', 1], ['app_store_url', 'رابط App Store', 1], ['play_store_url', 'رابط Google Play', 1], ['maintenance_message', 'رسالة صيانة (تظهر في التطبيق، اتركها فارغة لإيقافها)']];
-  page().innerHTML = head('الإعدادات') + `<div class="card" style="max-width:760px"><form class="fm" id="sf">
+  const imgBox = (key, label, hint) => `<div class="imgbox"><div class="im wide">${s[key] ? `<img src="${h(s[key])}" alt="">` : '<span class="muted" style="font-size:11px">لا توجد</span>'}</div><div style="flex:1"><b style="font-size:13.5px">${label}</b><p class="muted" style="font-size:12px;margin:4px 0 8px">${hint}</p>
+    <label class="btn lt sm" style="cursor:pointer">${s[key] ? 'تغيير' : 'رفع صورة'}<input type="file" accept="image/*" data-img="${key}" hidden data-skip="1"></label>${s[key] ? ` <button type="button" class="btn ghost sm" data-rm="${key}">إزالة</button>` : ''}</div></div>`;
+  page().innerHTML = head('الإعدادات') + `<div class="setgrid">
+    <div class="card"><h3>الواجهة الرئيسية</h3><form class="fm" id="hf">
+      <div class="row"><div class="f"><label>العنوان الرئيسي</label><input name="home_title" value="${h(s.home_title)}" placeholder="ماذا ستصوّر"></div><div class="f"><label>السطر الثاني (بلون خافت)</label><input name="home_subtitle" value="${h(s.home_subtitle)}" placeholder="هذا الأسبوع؟"></div></div>
+      ${imgBox('hero_image', 'صورة بطاقة الباقات', 'تظهر في الصفحة الرئيسية خلف بطاقة "أسطول وطاقم فني"')}
+    </form></div>
+    <div class="card"><h3>رسالة الترحيب <small>تظهر عند فتح التطبيق والموقع</small></h3><form class="fm" id="wf">
+      <div class="checks"><label><input type="checkbox" id="wen" data-skip="1" ${s.welcome_enabled === '1' ? 'checked' : ''}>تفعيل رسالة الترحيب</label></div>
+      <div class="f"><label>العنوان</label><input name="welcome_title" value="${h(s.welcome_title)}" maxlength="120"></div>
+      <div class="f"><label>النص</label><textarea name="welcome_body" rows="3" maxlength="1000">${h(s.welcome_body)}</textarea></div>
+      <div class="row"><div class="f"><label>نص الزر</label><input name="welcome_button" value="${h(s.welcome_button)}" maxlength="40"></div>
+        <div class="f"><label>تظهر</label><select name="welcome_frequency"><option value="once" ${s.welcome_frequency === 'once' ? 'selected' : ''}>مرة واحدة لكل مستخدم</option><option value="daily" ${s.welcome_frequency === 'daily' ? 'selected' : ''}>مرة يومياً</option><option value="always" ${s.welcome_frequency === 'always' ? 'selected' : ''}>عند كل فتح</option></select></div></div>
+      <div class="f"><label>رابط الزر (اختياري)</label><input name="welcome_link" dir="ltr" value="${h(s.welcome_link)}" placeholder="https://… أو اتركه فارغاً لإغلاق الرسالة فقط"></div>
+      ${imgBox('welcome_image', 'صورة الرسالة', 'اختيارية — مقاس مقترح 1200×800')}
+      <p class="muted" style="font-size:11.5px">أي تعديل على الرسالة يجعلها تظهر من جديد لكل المستخدمين.</p>
+    </form></div>
+    <div class="card" style="grid-column:1/-1"><h3>بيانات الشركة والتطبيق</h3><form class="fm" id="sf">
     <div class="row">${F.map(([k, l, ltr]) => `<div class="f"><label>${l}</label><input name="${k}" ${ltr ? 'dir="ltr"' : ''} value="${h(s[k])}"></div>`).join('')}</div>
     <div class="f"><label>العنوان</label><input name="address" value="${h(s.address)}"></div>
     <div class="checks"><label><input type="checkbox" id="sp" ${s.show_prices === '1' ? 'checked' : ''} data-skip="1">إظهار سعر اليوم للعملاء في الموقع والتطبيق</label></div>
-    <button type="submit" class="btn" style="justify-self:start">حفظ الإعدادات</button></form></div>`;
-  $('#sf').onsubmit = async e => {
-    e.preventDefault();
-    const body = val(e.target); body.show_prices = $('#sp').checked ? '1' : '0';
+    </form></div></div>
+    <div class="savebar"><button class="btn" id="saveAll">حفظ كل الإعدادات</button></div>`;
+  $('#saveAll').onclick = async () => {
+    const body = { ...val($('#sf')), ...val($('#hf')), ...val($('#wf')) };
+    body.show_prices = $('#sp').checked ? '1' : '0';
+    body.welcome_enabled = $('#wen').checked ? '1' : '0';
     try { await api('/admin/settings', { method: 'PUT', body }); toast('تم حفظ الإعدادات'); } catch (er) { fail(er); }
   };
+  $$('[data-img]').forEach(inp => upload(inp, '/admin/settings/image', { key: inp.dataset.img }).then(() => vSettings()));
+  $$('[data-rm]').forEach(b => b.onclick = async () => {
+    const fdx = new FormData(); fdx.append('key', b.dataset.rm); fdx.append('remove', '1');
+    try { await api('/admin/settings/image', { method: 'POST', form: fdx }); toast('تمت الإزالة'); vSettings(); } catch (e) { fail(e); }
+  });
+}
+
+/* ---------- روابط البنرات والإشعارات ---------- */
+const LINKS = { none: 'بدون رابط', category: 'قسم', brand: 'ماركة', equipment: 'معدة', kits: 'صفحة الباقات', url: 'رابط خارجي' };
+async function linkPicker(form, type, value) {
+  if (!S.cats.length) await loadCats().catch(() => {});
+  if (!S.brands) S.brands = (await api('/admin/brands').catch(() => ({ data: [] }))).data;
+  const box = $('.lnk', form);
+  const draw = (t, v = '') => {
+    let input = '';
+    if (t === 'category') input = `<select name="link_value">${S.cats.map(c => `<option value="${h(c.slug)}" ${c.slug === v ? 'selected' : ''}>${h(c.name_ar)}</option>`).join('')}</select>`;
+    else if (t === 'brand') input = `<select name="link_value">${S.brands.map(b => `<option value="${h(b.name)}" ${b.name === v ? 'selected' : ''}>${h(b.name)}</option>`).join('')}</select>`;
+    else if (t === 'equipment') input = `<input name="link_value" dir="ltr" value="${h(v)}" placeholder="slug المعدة، مثل arri-alexa-35" list="eqSlugs"><datalist id="eqSlugs"></datalist>`;
+    else if (t === 'url') input = `<input name="link_value" dir="ltr" value="${h(v)}" placeholder="https://">`;
+    box.innerHTML = `<div class="row"><div class="f"><label>عند الضغط يفتح</label><select name="link_type">${Object.entries(LINKS).map(([k, l]) => `<option value="${k}" ${k === t ? 'selected' : ''}>${l}</option>`).join('')}</select></div>${input ? `<div class="f"><label>${LINKS[t]}</label>${input}</div>` : '<div></div>'}</div>`;
+    $('[name=link_type]', box).onchange = e => draw(e.target.value);
+    if (t === 'equipment') api('/admin/equipment', { query: { active: 1 } }).then(r => { const dl = $('#eqSlugs', box); if (dl) dl.innerHTML = r.data.map(e => `<option value="${h(e.slug)}">${h(e.brand + ' ' + e.name)}</option>`).join(''); }).catch(() => {});
+  };
+  draw(type || 'none', value || '');
+}
+function upload(input, url, extra = {}) {
+  return new Promise((resolve, reject) => {
+    input.onchange = async () => {
+      const f = input.files[0]; if (!f) return;
+      const fdx = new FormData(); fdx.append('image', f); Object.entries(extra).forEach(([k, v]) => fdx.append(k, v));
+      toast('جاري رفع الصورة…');
+      try { const r = await api(url, { method: 'POST', form: fdx }); toast('تم رفع الصورة'); resolve(r.data); } catch (e) { fail(e); reject(e); }
+      input.value = '';
+    };
+  });
+}
+
+/* ---------- البنرات الإعلانية ---------- */
+async function vBanners() {
+  const { data: list } = await api('/admin/banners');
+  page().innerHTML = head('البنرات الإعلانية', '<button class="btn" id="addB">+ بنر جديد</button>') + `
+    <p class="muted" style="margin:-10px 0 16px;font-size:12.5px">تظهر كشرائح متحركة أعلى الصفحة الرئيسية في التطبيق والموقع. المقاس المقترح 1600×700 بكسل. البنر بدون صورة لا يظهر.</p>
+    <div class="bgrid">${list.map((b, i) => `<div class="bcard ${b.is_active ? '' : 'off'}" data-id="${b.id}">
+      <div class="bimg">${b.image ? `<img src="${h(b.image)}" alt="">` : '<span>بدون صورة</span>'}<div class="bov"><b>${h(b.title || '')}</b><small>${h(b.subtitle || '')}</small></div></div>
+      <div class="bmeta"><span class="chip ${b.is_active ? 'ok' : ''}"><i></i>${b.is_active ? 'ظاهر' : 'مخفي'}</span><small>${LINKS[b.link_type]}${b.link_value ? ': ' + h(b.link_value) : ''}${b.ends_at ? ' · حتى ' + fd(b.ends_at) : ''}</small>
+        <span class="mv"><button data-mv="-1" ${i ? '' : 'disabled'} aria-label="تقديم">▲</button><button data-mv="1" ${i < list.length - 1 ? '' : 'disabled'} aria-label="تأخير">▼</button></span></div></div>`).join('') || '<div class="empty"><b>لا توجد بنرات</b>أضف أول بنر إعلاني</div>'}</div>`;
+  const edit = b => {
+    const isNew = !b; b = b || { title: '', subtitle: '', button_text: '', link_type: 'none', is_active: true };
+    const d = drawer(isNew ? 'بنر جديد' : 'تعديل البنر', `
+      ${isNew ? '<div class="alert ok">احفظ البنر أولاً ثم ارفع صورته.</div>' : `<div class="bprev" id="bp">${b.image ? `<img src="${h(b.image)}" alt="">` : ''}<div class="bov"><b>${h(b.title || '')}</b><small>${h(b.subtitle || '')}</small>${b.button_text ? `<em>${h(b.button_text)}</em>` : ''}</div></div>
+      <label class="btn lt sm" style="cursor:pointer;margin:10px 0 4px">${b.image ? 'تغيير الصورة' : 'رفع الصورة'}<input type="file" accept="image/*" id="bimg" hidden data-skip="1"></label>`}
+      <form class="fm" id="bf" style="margin-top:10px">
+        <div class="f"><label>العنوان (اختياري)</label><input name="title" value="${h(b.title || '')}" maxlength="120"></div>
+        <div class="f"><label>النص الفرعي</label><input name="subtitle" value="${h(b.subtitle || '')}" maxlength="200"></div>
+        <div class="f"><label>نص الزر (اختياري)</label><input name="button_text" value="${h(b.button_text || '')}" maxlength="40" placeholder="اطلب الآن"></div>
+        <div class="lnk"></div>
+        <div class="row"><div class="f"><label>يبدأ العرض (اختياري)</label><input type="date" name="starts_at" value="${b.starts_at || ''}"></div><div class="f"><label>ينتهي العرض (اختياري)</label><input type="date" name="ends_at" value="${b.ends_at || ''}"></div></div>
+        <div class="checks"><label><input type="checkbox" name="is_active" ${b.is_active ? 'checked' : ''}>ظاهر</label></div>
+      </form>`, `<button class="btn" id="save">${isNew ? 'إضافة' : 'حفظ'}</button>${isNew ? '' : '<button class="btn lt" id="del" style="flex:none;color:var(--red)">حذف</button>'}`);
+    linkPicker($('#bf', d), b.link_type, b.link_value);
+    if ($('#bimg')) upload($('#bimg'), `/admin/banners/${b.id}/image`).then(x => { edit(x); vBanners(); });
+    $('#save').onclick = async () => {
+      const body = val($('#bf'));
+      try { const r = await api(isNew ? '/admin/banners' : '/admin/banners/' + b.id, { method: isNew ? 'POST' : 'PATCH', body }); toast('تم الحفظ'); vBanners(); if (isNew) edit(r.data); else closeDrawer(); }
+      catch (e) { markErrors($('#bf'), e.details); fail(e); }
+    };
+    if ($('#del')) $('#del').onclick = async () => { if (!confirm('حذف البنر؟')) return; try { await api('/admin/banners/' + b.id, { method: 'DELETE' }); closeDrawer(); vBanners(); } catch (e) { fail(e); } };
+  };
+  $('#addB').onclick = () => edit(null);
+  $$('.bcard').forEach(c => c.onclick = e => {
+    const mv = e.target.closest('[data-mv]');
+    if (mv) {
+      e.stopPropagation();
+      const ids = list.map(x => x.id), i = ids.indexOf(+c.dataset.id), j = i + +mv.dataset.mv;
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+      api('/admin/banners/sort', { method: 'POST', body: { ids } }).then(vBanners).catch(fail);
+      return;
+    }
+    edit(list.find(x => x.id === +c.dataset.id));
+  });
+}
+
+/* ---------- الماركات ---------- */
+async function vBrands() {
+  const { data: list } = await api('/admin/brands');
+  S.brands = list;
+  page().innerHTML = head('الماركات / العلامات التجارية', '<button class="btn lt" id="syncB">مزامنة من المعدات</button><button class="btn" id="addBr">+ ماركة</button>') + `
+    <p class="muted" style="margin:-10px 0 16px;font-size:12.5px">الماركات المميزة (★) تظهر في الواجهة الرئيسية للتطبيق والموقع مع شعارها، والضغط عليها يعرض معداتها. يُفضَّل شعار PNG بخلفية شفافة.</p>
+    <div class="tbl"><table><thead><tr><th></th><th>الماركة</th><th>المعدات</th><th>الواجهة الرئيسية</th><th>الترتيب</th><th>الحالة</th></tr></thead><tbody>
+    ${list.map(b => `<tr data-id="${b.id}"><td style="width:90px"><div class="logo-cell">${b.logo ? `<img src="${h(b.logo)}" alt="">` : `<span>${h(b.name.slice(0, 2))}</span>`}</div></td><td class="nm ltr" style="text-align:right">${h(b.name)}</td><td class="num">${b.count}</td>
+      <td>${b.is_featured ? '<span class="chip ink">★ مميزة</span>' : '<span class="muted">—</span>'}</td><td class="num">${b.sort}</td><td>${b.is_active ? '<span class="chip ok"><i></i>ظاهرة</span>' : '<span class="chip"><i></i>مخفية</span>'}</td></tr>`).join('') || '<tr><td colspan="6"><div class="empty"><b>لا توجد ماركات</b>اضغط "مزامنة من المعدات"</div></td></tr>'}
+    </tbody></table></div>`;
+  const edit = b => {
+    const isNew = !b; b = b || { name: '', sort: 100, is_active: true, is_featured: true };
+    const d = drawer(isNew ? 'ماركة جديدة' : h(b.name), `
+      ${isNew ? '' : `<div class="imgbox"><div class="im logo-cell">${b.logo ? `<img id="bl" src="${h(b.logo)}" alt="">` : `<span>${h(b.name.slice(0, 2))}</span>`}</div><div style="flex:1"><b style="font-size:13.5px">الشعار</b><p class="muted" style="font-size:12px;margin:4px 0 8px">PNG شفاف أو JPG — يُحسَّن تلقائياً</p><label class="btn lt sm" style="cursor:pointer">${b.logo ? 'تغيير الشعار' : 'رفع الشعار'}<input type="file" accept="image/*" id="blogo" hidden data-skip="1"></label></div></div>`}
+      <form class="fm" id="brf" style="margin-top:14px"><div class="f"><label>اسم الماركة (كما يُكتب في المعدات)</label><input name="name" dir="ltr" value="${h(b.name)}"></div>
+        <div class="f"><label>الترتيب (الأصغر أولاً)</label><input type="number" name="sort" value="${b.sort}"></div>
+        <div class="checks"><label><input type="checkbox" name="is_featured" ${b.is_featured ? 'checked' : ''}>تظهر في الواجهة الرئيسية</label><label><input type="checkbox" name="is_active" ${b.is_active ? 'checked' : ''}>فعّالة</label></div>
+        ${isNew ? '' : `<p class="muted" style="font-size:12px">${b.count} معدة بهذه الماركة. تغيير الاسم يُحدّث كل المعدات المرتبطة.</p>`}</form>`,
+      `<button class="btn" id="save">حفظ</button>${isNew ? '' : '<button class="btn lt" id="del" style="flex:none;color:var(--red)">حذف</button>'}`);
+    if ($('#blogo')) upload($('#blogo'), `/admin/brands/${b.id}/logo`).then(all => { vBrands(); edit(all.find(x => x.id === b.id)); });
+    $('#save').onclick = async () => { try { const r = await api(isNew ? '/admin/brands' : '/admin/brands/' + b.id, { method: isNew ? 'POST' : 'PATCH', body: val($('#brf')) }); toast('تم الحفظ'); vBrands(); if (isNew) { const nb = r.data.find(x => x.name === val($('#brf')).name); nb ? edit(nb) : closeDrawer(); } else closeDrawer(); } catch (e) { markErrors($('#brf'), e.details); fail(e); } };
+    if ($('#del')) $('#del').onclick = async () => { if (!confirm('حذف الماركة؟')) return; try { await api('/admin/brands/' + b.id, { method: 'DELETE' }); closeDrawer(); vBrands(); } catch (e) { fail(e); } };
+  };
+  $('#addBr').onclick = () => edit(null);
+  $('#syncB').onclick = async () => { try { await api('/admin/brands/sync', { method: 'POST' }); toast('تمت المزامنة'); vBrands(); } catch (e) { fail(e); } };
+  $$('tr[data-id]').forEach(tr => tr.onclick = () => edit(list.find(x => x.id === +tr.dataset.id)));
+}
+
+/* ---------- الإشعارات ---------- */
+async function vNotifications(params) {
+  const st = { type: params.get('type') || '' };
+  page().innerHTML = head('الإشعارات') + `<div class="grid2 ntf">
+    <div class="card"><h3>إرسال إشعار إعلاني <small>يصل لكل مستخدمي التطبيق</small></h3>
+      <form class="fm" id="nf">
+        <div class="f"><label>العنوان *</label><input name="title" maxlength="150" placeholder="مثلاً: خصم 20% على باقات الإضاءة"></div>
+        <div class="f"><label>النص</label><textarea name="body" rows="3" maxlength="1000" placeholder="تفاصيل العرض…"></textarea></div>
+        <div class="f"><label>صورة (اختياري)</label><input type="file" name="image" accept="image/*" data-skip="1" id="nimg"></div>
+        <div class="lnk"></div>
+        <div class="row"><div class="f"><label>النوع</label><select name="type"><option value="promo">إعلاني</option><option value="info">تنبيه عام</option></select></div><div></div></div>
+        <button class="btn" id="nsend" type="submit">${svg('bell', 18)} إرسال الآن</button>
+      </form></div>
+    <div><div class="phone"><div class="pn-top">الآن · Ghani Group</div><div class="pn"><img src="assets/brand/mark.png" alt=""><div><b id="pvT">عنوان الإشعار</b><span id="pvB">نص الإشعار يظهر هنا</span></div></div><img id="pvI" class="pn-img" alt="" hidden></div>
+      <div class="alert warn" style="margin-top:12px;font-size:12px">يظهر الإشعار داخل التطبيق (صندوق الإشعارات + تنبيه أعلى الشاشة عند فتح التطبيق)، وفي الموقع. إشعارات تغيّر حالة الطلب ومحاضر التسليم والإرجاع تُرسل للعميل تلقائياً.</div></div>
+  </div>
+  <div class="filters" style="margin-top:18px"><div class="seg" id="nt"><button data-t="">الكل</button><button data-t="promo">إعلانية</button><button data-t="order">الطلبات</button><button data-t="info">تنبيهات</button></div></div>
+  <div class="tbl"><table><thead><tr><th>الإشعار</th><th>النوع</th><th>إلى</th><th>الوقت</th><th></th></tr></thead><tbody id="nb"></tbody></table></div>`;
+  const nf = $('#nf');
+  linkPicker(nf, 'none', '');
+  const pv = () => { $('#pvT').textContent = nf.title.value || 'عنوان الإشعار'; $('#pvB').textContent = nf.body.value || 'نص الإشعار يظهر هنا'; };
+  nf.title.oninput = nf.body.oninput = pv;
+  $('#nimg').onchange = e => { const f = e.target.files[0]; const im = $('#pvI'); if (f) { im.src = URL.createObjectURL(f); im.hidden = false; } else im.hidden = true; };
+  const TY = { promo: ['إعلاني', 'ink'], order: ['طلب', 'ok'], info: ['تنبيه', 'warn'] };
+  const load = async () => {
+    $$('#nt button').forEach(b => b.classList.toggle('on', b.dataset.t === st.type));
+    const { data } = await api('/admin/notifications', { query: { type: st.type } });
+    $('#nb').innerHTML = data.map(n => `<tr style="cursor:default"><td><div class="nm">${h(n.title)}</div><div class="sub">${h((n.body || '').slice(0, 120))}</div></td><td><span class="chip ${TY[n.type][1]}">${TY[n.type][0]}</span></td>
+      <td class="sub">${n.broadcast ? 'الجميع' : (n.order_ref ? `<span class="ltr">${h(n.order_ref)}</span>` : '')}${n.user_name ? ' · ' + h(n.user_name) : ''}</td><td class="sub">${fdt(n.created_at)}${n.by_name ? '<br>' + h(n.by_name) : ''}</td>
+      <td><button class="btn lt sm" data-del="${n.id}">حذف</button></td></tr>`).join('') || '<tr><td colspan="5"><div class="empty"><b>لا توجد إشعارات</b></div></td></tr>';
+    $$('[data-del]').forEach(b => b.onclick = async () => { if (!confirm('حذف الإشعار؟ سيختفي من صندوق إشعارات المستخدمين.')) return; try { await api('/admin/notifications/' + b.dataset.del, { method: 'DELETE' }); load(); } catch (e) { fail(e); } });
+  };
+  $$('#nt button').forEach(b => b.onclick = () => { st.type = b.dataset.t; load(); });
+  nf.onsubmit = async e => {
+    e.preventDefault();
+    if (!nf.title.value.trim()) { toast('اكتب عنوان الإشعار', true); return; }
+    if (!confirm('إرسال هذا الإشعار لكل المستخدمين؟')) return;
+    const fdx = new FormData();
+    Object.entries(val(nf)).forEach(([k, v]) => fdx.append(k, v));
+    if ($('#nimg').files[0]) fdx.append('image', $('#nimg').files[0]);
+    $('#nsend').disabled = true;
+    try { await api('/admin/notifications', { method: 'POST', form: fdx }); toast('تم إرسال الإشعار ✓'); nf.reset(); linkPicker(nf, 'none', ''); $('#pvI').hidden = true; pv(); load(); }
+    catch (er) { markErrors(nf, er.details); fail(er); }
+    $('#nsend').disabled = false;
+  };
+  await load();
 }
 
 /* ---------- system ---------- */
@@ -481,7 +841,7 @@ async function vSystem() {
 (async () => {
   try {
     const r = await api('/auth/me');
-    if (r.data && ['admin', 'staff'].includes(r.data.role)) { S.user = r.data; shell(); return; }
+    if (r.data && ['admin', 'staff', 'storekeeper'].includes(r.data.role)) { S.user = r.data; shell(); return; }
   } catch (e) { /* not logged in */ }
   renderLogin();
 })();

@@ -11,7 +11,17 @@ class RemoteConfig {
   final bool forceUpdate, updateAvailable;
   final String storeUrl;
   final String? maintenance;
-  RemoteConfig({this.forceUpdate = false, this.updateAvailable = false, this.storeUrl = '', this.maintenance});
+  final WelcomeMessage? welcome;
+  final String homeTitle, homeSubtitle;
+  RemoteConfig({
+    this.forceUpdate = false,
+    this.updateAvailable = false,
+    this.storeUrl = '',
+    this.maintenance,
+    this.welcome,
+    this.homeTitle = '',
+    this.homeSubtitle = '',
+  });
 }
 
 /// بيانات عامة مشتركة + التنقل بين التبويبات
@@ -28,6 +38,7 @@ class AppState extends ChangeNotifier {
   // ---- التبويبات ----
   int tab = 0;
   String browseCategory = '';
+  String browseBrand = '';
   String browseQuery = '';
   bool browseFocus = false;
   int browseNonce = 0;
@@ -37,8 +48,9 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void openBrowse({String category = '', String query = '', bool focus = false}) {
+  void openBrowse({String category = '', String brand = '', String query = '', bool focus = false}) {
     browseCategory = category;
+    browseBrand = brand;
     browseQuery = query;
     browseFocus = focus;
     browseNonce++;
@@ -48,6 +60,9 @@ class AppState extends ChangeNotifier {
 
   String get whatsapp => (settings['whatsapp'] ?? '').isNotEmpty ? settings['whatsapp']! : AppConfig.fallbackWhatsapp;
   String get phone => (settings['phone'] ?? '').isNotEmpty ? settings['phone']! : AppConfig.fallbackPhone;
+  String get homeTitle => config.homeTitle.isNotEmpty ? config.homeTitle : ((settings['home_title'] ?? '').isNotEmpty ? settings['home_title']! : 'ماذا ستصوّر');
+  String get homeSubtitle => config.homeTitle.isNotEmpty ? config.homeSubtitle : (settings['home_subtitle'] ?? 'هذا الأسبوع؟');
+
   String get currency => (settings['currency'] ?? '').isNotEmpty ? settings['currency']! : 'IQD';
 
   /// يُستدعى عند الإقلاع: نسخة التطبيق + الإعدادات + فحص التحديث الإجباري
@@ -68,11 +83,15 @@ class AppState extends ChangeNotifier {
     try {
       final r = await api.get('/app/config', {'platform': Platform.isIOS ? 'ios' : 'android', 'version': version});
       final m = r.map;
+      final home = m['home'] is Map ? Map<String, dynamic>.from(m['home'] as Map) : const <String, dynamic>{};
       config = RemoteConfig(
         forceUpdate: m['force_update'] == true,
         updateAvailable: m['update_available'] == true,
         storeUrl: '${m['store_url'] ?? ''}',
         maintenance: m['maintenance'] == null ? null : '${m['maintenance']}',
+        welcome: m['welcome'] is Map ? WelcomeMessage.fromJson(Map<String, dynamic>.from(m['welcome'] as Map)) : null,
+        homeTitle: '${home['title'] ?? ''}',
+        homeSubtitle: '${home['subtitle'] ?? ''}',
       );
     } catch (_) {
       config = RemoteConfig();

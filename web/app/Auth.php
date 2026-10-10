@@ -69,6 +69,33 @@ final class Auth
         return $u;
     }
 
+    /** الأدوار التي تدخل لوحة التحكم */
+    public const PANEL_ROLES = ['admin', 'staff', 'storekeeper'];
+
+    /**
+     * صلاحيات الأدوار:
+     *  admin       — كل شيء
+     *  staff       — الطلبات والأسعار، الكتالوج، البنرات، الماركات، الإشعارات، التسليم والإرجاع
+     *  storekeeper — أمين المخزن: عرض الطلبات، التسليم والإرجاع بالتوقيع، كميات المعدات — بدون أسعار
+     */
+    private const PERMS = [
+        'staff' => ['dashboard', 'orders.view', 'orders.edit', 'orders.price', 'handover', 'equipment.edit', 'catalog.edit', 'banners', 'brands', 'notifications'],
+        'storekeeper' => ['dashboard', 'orders.view', 'handover', 'equipment.edit'],
+    ];
+
+    public static function can(?array $u, string $perm): bool
+    {
+        if (!$u) return false;
+        if ($u['role'] === 'admin') return true;
+        return in_array($perm, self::PERMS[$u['role']] ?? [], true);
+    }
+
+    public static function perms(array $u): array
+    {
+        if ($u['role'] === 'admin') return ['*'];
+        return self::PERMS[$u['role']] ?? [];
+    }
+
     public static function issue(int $userId, Request $req, bool $cookie): string
     {
         $token = Security::randomToken(32);

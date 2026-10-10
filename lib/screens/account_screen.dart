@@ -6,9 +6,12 @@ import '../core/config.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
+import '../state/notifications.dart';
 import '../state/session.dart';
+import '../state/theme_state.dart';
 import '../widgets/common.dart';
 import '../widgets/equipment_card.dart';
+import 'notifications_screen.dart';
 import 'track_screen.dart';
 
 class AccountScreen extends StatelessWidget {
@@ -17,7 +20,7 @@ class AccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.watch<SessionState>();
-    if (s.restoring) return const Center(child: CircularProgressIndicator(color: C.ink));
+    if (s.restoring) return Center(child: CircularProgressIndicator(color: C.ink));
     return SafeArea(bottom: false, child: s.loggedIn ? const _Profile() : const _AuthView());
   }
 }
@@ -82,7 +85,7 @@ class _AuthViewState extends State<_AuthView> {
       children: [
         Text(_register ? 'حساب جديد' : 'تسجيل الدخول', style: Txt.title),
         const SizedBox(height: 6),
-        const Text('الحساب اختياري — يمكنك التصفح وإرسال طلب بدون حساب. الحساب يحفظ طلباتك ومفضلتك.', style: Txt.muted),
+        Text('الحساب اختياري — يمكنك التصفح وإرسال طلب بدون حساب. الحساب يحفظ طلباتك ومفضلتك.', style: Txt.muted),
         const SizedBox(height: 16),
         _Segmented(
           labels: const ['دخول', 'حساب جديد'],
@@ -114,7 +117,7 @@ class _AuthViewState extends State<_AuthView> {
           ]),
         ),
         if (_register)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 8),
             child: Text('8 أحرف على الأقل وتحتوي حروفاً وأرقاماً.', style: Txt.small),
           ),
@@ -164,7 +167,7 @@ class _ProfileState extends State<_Profile> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
       children: [
-        const Text('حسابي', style: Txt.title),
+        Text('حسابي', style: Txt.title),
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(18),
@@ -172,22 +175,22 @@ class _ProfileState extends State<_Profile> {
           child: Row(children: [
             CircleAvatar(
               radius: 27,
-              backgroundColor: Colors.white,
+              backgroundColor: C.onInk,
               child: Text(u.name.trim().isEmpty ? '?' : u.name.trim().substring(0, 1),
-                  style: const TextStyle(color: C.ink, fontWeight: FontWeight.w600, fontSize: 18)),
+                  style: TextStyle(color: C.ink, fontWeight: FontWeight.w600, fontSize: 18)),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(u.name, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
-                Text(u.email, textDirection: TextDirection.ltr, style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 12.5)),
+                Text(u.name, style: TextStyle(color: C.onInk, fontSize: 17, fontWeight: FontWeight.w600)),
+                Text(u.email, textDirection: TextDirection.ltr, style: TextStyle(color: C.inkMuted, fontSize: 12.5)),
               ]),
             ),
             OutlinedButton(
               onPressed: () => context.read<SessionState>().logout(),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFAAAAAA),
-                side: const BorderSide(color: Color(0xFF333333)),
+                foregroundColor: C.inkMuted,
+                side: BorderSide(color: C.inkLine),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('خروج', style: TextStyle(fontSize: 12.5)),
@@ -245,7 +248,9 @@ class _OrdersListState extends State<_OrdersList> {
             onAction: () => context.read<AppState>().openBrowse(),
           );
         }
-        return Column(children: [for (final o in snap.data!) OrderCard(o, onCancelled: widget.onChanged)]);
+        return Column(children: [
+          for (var i = 0; i < snap.data!.length; i++) Reveal(index: i, child: OrderCard(snap.data![i], onCancelled: widget.onChanged)),
+        ]);
       },
     );
   }
@@ -265,7 +270,7 @@ class OrderCard extends StatelessWidget {
         title: const Text('إلغاء هذا الطلب؟'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('رجوع')),
-          TextButton(onPressed: () => Navigator.pop(d, true), child: const Text('إلغاء الطلب', style: TextStyle(color: C.red))),
+          TextButton(onPressed: () => Navigator.pop(d, true), child: Text('إلغاء الطلب', style: TextStyle(color: C.red))),
         ],
       ),
     );
@@ -316,7 +321,7 @@ class OrderCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text.rich(TextSpan(children: [
                       const TextSpan(text: 'عرض السعر: '),
-                      TextSpan(text: '${fmtNumber(order.quoteAmount!)} $currency', style: const TextStyle(color: C.ink, fontWeight: FontWeight.w600)),
+                      TextSpan(text: '${fmtNumber(order.quoteAmount!)} $currency', style: TextStyle(color: C.ink, fontWeight: FontWeight.w600)),
                     ]), style: Txt.small),
                   ),
                 const SizedBox(height: 12),
@@ -335,7 +340,7 @@ class OrderCard extends StatelessWidget {
                     child: TextButton(
                       onPressed: () => _cancel(context),
                       style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 34)),
-                      child: const Text('إلغاء الطلب', style: TextStyle(color: C.muted, fontSize: 12)),
+                      child: Text('إلغاء الطلب', style: TextStyle(color: C.muted, fontSize: 12)),
                     ),
                   ),
               ],
@@ -489,7 +494,7 @@ class _SettingsState extends State<_Settings> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('إلغاء')),
-          TextButton(onPressed: () => Navigator.pop(d, true), child: const Text('حذف الحساب', style: TextStyle(color: C.red))),
+          TextButton(onPressed: () => Navigator.pop(d, true), child: Text('حذف الحساب', style: TextStyle(color: C.red))),
         ],
       ),
     );
@@ -543,30 +548,38 @@ class _InfoSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final unread = context.select<NotificationsState, int>((n) => n.unread);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const _AppearanceCard(),
+        const SizedBox(height: 12),
+        _MenuCard(items: [
+          _MenuItem(Icons.notifications_none_rounded, unread > 0 ? 'الإشعارات ($unread جديد)' : 'الإشعارات',
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
+        ]),
+        const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(color: C.ink, borderRadius: BorderRadius.circular(26)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('قسم التأجير', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+              Text('قسم التأجير', style: TextStyle(color: C.onInk, fontSize: 17, fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
               if ((app.settings['address'] ?? '').isNotEmpty)
-                Text(app.settings['address']!, style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 12.5, height: 1.8)),
-              Text(app.phone, textDirection: TextDirection.ltr, style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 12.5)),
+                Text(app.settings['address']!, style: TextStyle(color: C.inkMuted, fontSize: 12.5, height: 1.8)),
+              Text(app.phone, textDirection: TextDirection.ltr, style: TextStyle(color: C.inkMuted, fontSize: 12.5)),
               const SizedBox(height: 14),
               Row(children: [
                 Expanded(
                   child: AppButton('واتساب',
-                      color: Colors.white, fg: C.ink, height: 44, onPressed: () => openLink(context, whatsappUrl(app.whatsapp, 'مرحباً Ghani Group'))),
+                      color: C.onInk, fg: C.ink, height: 44, onPressed: () => openLink(context, whatsappUrl(app.whatsapp, 'مرحباً Ghani Group'))),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: AppButton('اتصال',
-                      color: const Color(0xFF2A2A2A), height: 44, onPressed: () => openLink(context, 'tel:${app.phone.replaceAll(RegExp(r'[^0-9+]'), '')}')),
+                      color: C.ink2, height: 44, onPressed: () => openLink(context, 'tel:${app.phone.replaceAll(RegExp(r'[^0-9+]'), '')}')),
                 ),
               ]),
             ],
@@ -591,8 +604,8 @@ class _MenuItem {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final Color color;
-  _MenuItem(this.icon, this.label, this.onTap, {this.color = C.ink});
+  final Color? color;
+  _MenuItem(this.icon, this.label, this.onTap, {this.color});
 }
 
 class _MenuCard extends StatelessWidget {
@@ -611,12 +624,12 @@ class _MenuCard extends StatelessWidget {
               onTap: items[i].onTap,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                decoration: BoxDecoration(border: i == items.length - 1 ? null : const Border(bottom: BorderSide(color: C.line))),
+                decoration: BoxDecoration(border: i == items.length - 1 ? null : Border(bottom: BorderSide(color: C.line))),
                 child: Row(children: [
-                  Icon(items[i].icon, size: 20, color: items[i].color),
+                  Icon(items[i].icon, size: 20, color: items[i].color ?? C.ink),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(items[i].label, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w500, color: items[i].color))),
-                  const Icon(Icons.chevron_left_rounded, color: C.line),
+                  Expanded(child: Text(items[i].label, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w500, color: items[i].color ?? C.ink))),
+                  Icon(Icons.chevron_left_rounded, color: C.line),
                 ]),
               ),
             ),
@@ -648,10 +661,75 @@ class _Segmented extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 11),
                   decoration: BoxDecoration(color: i == index ? C.ink : Colors.transparent, borderRadius: BorderRadius.circular(12)),
                   alignment: Alignment.center,
-                  child: Text(labels[i], style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: i == index ? Colors.white : C.muted)),
+                  child: Text(labels[i], style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: i == index ? C.onInk : C.muted)),
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// المظهر: تلقائي (حسب النظام) / فاتح / داكن
+class _AppearanceCard extends StatelessWidget {
+  const _AppearanceCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.watch<ThemeState>();
+    const opts = [
+      (AppThemeMode.system, Icons.brightness_auto_rounded, 'تلقائي'),
+      (AppThemeMode.light, Icons.light_mode_rounded, 'فاتح'),
+      (AppThemeMode.dark, Icons.dark_mode_rounded, 'داكن'),
+    ];
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(22)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('المظهر', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              for (final o in opts)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Builder(builder: (bctx) {
+                      final on = t.mode == o.$1;
+                      return Pressable(
+                        scale: .94,
+                        onTap: () {
+                          final box = bctx.findRenderObject() as RenderBox?;
+                          t.set(o.$1, from: box?.localToGlobal(box.size.center(Offset.zero)));
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 280),
+                          curve: Curves.easeOutCubic,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: on ? C.ink : C.bg,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(children: [
+                            AnimatedScale(
+                              scale: on ? 1.12 : 1,
+                              duration: const Duration(milliseconds: 380),
+                              curve: Curves.elasticOut,
+                              child: Icon(o.$2, size: 22, color: on ? C.onInk : C.muted),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(o.$3, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: on ? C.onInk : C.ink)),
+                          ]),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -665,6 +743,6 @@ class _LinkText extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GestureDetector(
         onTap: () => openLink(context, url, inApp: true),
-        child: Text(text, style: const TextStyle(fontSize: 11.5, color: C.ink, decoration: TextDecoration.underline)),
+        child: Text(text, style: TextStyle(fontSize: 11.5, color: C.ink, decoration: TextDecoration.underline)),
       );
 }

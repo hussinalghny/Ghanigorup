@@ -10,21 +10,34 @@ use App\Config;
 use App\DB;
 use App\HttpError;
 use App\Importer;
+use App\Notify;
 use App\Request;
 use App\Response;
 use App\Security;
 use App\Upload;
 use App\Validator;
 
-/** واجهات لوحة التحكم — تتطلب دور admin أو staff (بعضها admin فقط) */
+/** واجهات لوحة التحكم — admin / staff / storekeeper حسب الصلاحية (Auth::can) */
 final class AdminController
 {
     private array $u;
 
     public function __construct()
     {
-        $this->u = Auth::require(['admin', 'staff']);
+        $this->u = Auth::require(Auth::PANEL_ROLES);
         header('Cache-Control: no-store');
+    }
+
+    private function need(string $perm): void
+    {
+        if (!Auth::can($this->u, $perm)) throw new HttpError(403, 'forbidden', 'لا تملك صلاحية لهذا الإجراء');
+    }
+
+    /** أمين المخزن لا يرى الأسعار */
+    private function stripPrices(array $o): array
+    {
+        if (!Auth::can($this->u, 'orders.price')) unset($o['quote_amount'], $o['daily_rate']);
+        return $o;
     }
 
     private function adminOnly(): void
@@ -80,6 +93,7 @@ final class AdminController
 
     public function orders(Request $r): void
     {
+        $this->need('orders.view');
         $page = $r->int('page', 1, 1, 10000);
         $per = $r->int('per_page', 25, 5, 100);
         $where = ['1=1'];
@@ -93,22 +107,25 @@ final class AdminController
         $w = implode(' AND ', $where);
         $total = (int)DB::val("SELECT COUNT(*) FROM orders WHERE $w", $p);
         $rows = DB::all("SELECT o.*, (SELECT SUM(qty) FROM order_items WHERE order_id = o.id) AS units FROM orders o WHERE $w ORDER BY o.id DESC LIMIT $per OFFSET " . (($page - 1) * $per), $p);
-        Response::json(array_map(fn($o) => OrderController::present($o, false, true) + ['units' => (int)$o['units']], $rows), 200, ['page' => $page, 'per_page' => $per, 'total' => $total, 'pages' => (int)ceil($total / $per)]);
+        Response::json(array_map(fn($o) => $this->stripPrices(OrderController::present($o, false, true) + ['units' => (int)$o['units']]), $rows), 200, ['page' => $page, 'per_page' => $per, 'total' => $total, 'pages' => (int)ceil($total / $per)]);
     }
 
     public function order(Request $r): void
     {
+        $this->need('orders.view');
         $o = DB::oneW('SELECT * FROM orders WHERE id = ?', [$this->id($r)]);
         if (!$o) throw new HttpError(404, 'not_found', 'الطلب غير موجود');
         $out = OrderController::present($o, true, true);
         $items = array_map(fn($i) => ['equipment_id' => $i['equipment_id'], 'qty' => $i['qty']], $out['items']);
         $out['shortages'] = in_array($o['status'], ['pending', 'quoted', 'confirmed'], true)
             ? Catalog::shortages($items, $o['start_date'], $o['end_date'], (int)$o['id']) : [];
-        Response::json($out);
+        $out['handovers'] = HandoverController::listFor((int)$o['id']);
+        Response::json($this->stripPrices($out));
     }
 
     public function updateOrder(Request $r): void
     {
+        $this->need('orders.edit');
         $id = $this->id($r);
         $o = DB::oneW('SELECT * FROM orders WHERE id = ?', [$id]);
         if (!$o) throw new HttpError(404, 'not_found', 'الطلب غير موجود');
@@ -141,6 +158,11 @@ final class AdminController
         Cache::bump('orders');
         Cache::bump('admin_stats');
         Auth::audit('order.update', 'order', $id, $d);
+        if (isset($d['status']) && $d['status'] !== $o['status']) {
+            $extra = ($d['status'] === 'quoted' && isset($d['quote_amount'])) || ($d['status'] === 'quoted' && $o['quote_amount'] !== null)
+                ? 'المبلغ: ' . number_format((float)($d['quote_amount'] ?? $o['quote_amount'])) . ' ' . (Catalog::setting('currency') ?: 'IQD') : null;
+            Notify::orderStatus($o, $d['status'], $extra);
+        }
         $this->order($r);
     }
 
@@ -150,14 +172,15 @@ final class AdminController
     {
         $where = ['1=1'];
         $p = [];
+        if (($b = $r->str('brand', '', 80)) !== '') { $where[] = 'e.brand = ?'; $p[] = $b; }
         if (($c = $r->str('category')) !== '') { $where[] = 'c.slug = ?'; $p[] = $c; }
         if (($q = $r->str('q', '', 80)) !== '') { $like = '%' . addcslashes($q, '%_\\') . '%'; $where[] = '(e.name LIKE ? OR e.brand LIKE ?)'; array_push($p, $like, $like); }
         if ($r->str('active') !== '') { $where[] = 'e.is_active = ?'; $p[] = (int)$r->str('active'); }
         $rows = DB::all(Catalog::EQ_SELECT . ' WHERE ' . implode(' AND ', $where) . ' ORDER BY c.sort, e.sort, e.id LIMIT 1000', $p);
-        Response::json(array_map(fn($x) => Catalog::equipment($x, true) + [
+        Response::json(array_map(fn($x) => $this->stripPrices(Catalog::equipment($x, true) + [
             'is_active' => (bool)$x['is_active'], 'daily_rate' => $x['daily_rate'] !== null ? (float)$x['daily_rate'] : null,
             'sort' => (int)$x['sort'], 'category_id' => (int)$x['category_id'], 'image_path' => $x['image'],
-        ], $rows));
+        ]), $rows));
     }
 
     private const EQ_RULES = [
@@ -183,6 +206,11 @@ final class AdminController
             }
             $d['specs'] = $clean ? json_encode($clean, JSON_UNESCAPED_UNICODE) : null;
         }
+        if (!Auth::can($this->u, 'orders.price')) unset($d['daily_rate']);
+        if (isset($d['brand'])) {
+            // ماركة جديدة تُضاف تلقائياً لقائمة الماركات
+            DB::exec('INSERT IGNORE INTO brands (name, slug) VALUES (?, ?)', [$d['brand'], Validator::slugify($d['brand']) . '-' . bin2hex(random_bytes(2))]);
+        }
         if (isset($d['category_id']) && !DB::oneW('SELECT id FROM categories WHERE id = ?', [$d['category_id']])) {
             throw new HttpError(422, 'validation', 'القسم غير موجود', ['category_id' => 'غير موجود']);
         }
@@ -202,6 +230,7 @@ final class AdminController
 
     public function createEquipment(Request $r): void
     {
+        $this->need('equipment.edit');
         $d = $this->eqData(Validator::check($r->input(), self::EQ_RULES));
         $d['slug'] = $this->uniqueSlug($d['slug'] ?? Validator::slugify($d['brand'] . ' ' . $d['name']));
         $id = DB::insert('equipment', $d);
@@ -215,6 +244,7 @@ final class AdminController
     {
         $id = $this->id($r);
         if (!DB::oneW('SELECT id FROM equipment WHERE id = ?', [$id])) throw new HttpError(404, 'not_found', 'غير موجود');
+        $this->need('equipment.edit');
         $d = $this->eqData(Validator::check($r->input(), self::EQ_RULES, true));
         if (isset($d['slug'])) $d['slug'] = $this->uniqueSlug($d['slug'], $id);
         if ($d) DB::update('equipment', $d, 'id = :id', ['id' => $id]);
@@ -234,7 +264,7 @@ final class AdminController
         $x = DB::oneW(Catalog::EQ_SELECT . ' WHERE e.id = ?', [$this->id($r)]);
         $out = Catalog::equipment($x, true) + ['is_active' => (bool)$x['is_active'], 'daily_rate' => $x['daily_rate'] !== null ? (float)$x['daily_rate'] : null, 'sort' => (int)$x['sort'], 'category_id' => (int)$x['category_id']];
         $out['gallery'] = array_map(fn($g) => ['id' => (int)$g['id'], 'url' => Catalog::url($g['path'])], DB::allW('SELECT id, path FROM equipment_images WHERE equipment_id = ? ORDER BY sort, id', [$x['id']]));
-        Response::json($out, $status);
+        Response::json($this->stripPrices($out), $status);
     }
 
     public function deleteEquipment(Request $r): void
@@ -260,6 +290,7 @@ final class AdminController
 
     public function uploadImage(Request $r): void
     {
+        $this->need('equipment.edit');
         $id = $this->id($r);
         $row = DB::oneW('SELECT id, image FROM equipment WHERE id = ?', [$id]);
         if (!$row) throw new HttpError(404, 'not_found', 'غير موجود');
@@ -280,6 +311,7 @@ final class AdminController
 
     public function deleteGalleryImage(Request $r): void
     {
+        $this->need('equipment.edit');
         $img = DB::oneW('SELECT * FROM equipment_images WHERE id = ?', [(int)$r->params['img']]);
         if ($img) { DB::exec('DELETE FROM equipment_images WHERE id = ?', [$img['id']]); Upload::remove($img['path']); }
         Cache::bump('catalog');
@@ -299,6 +331,7 @@ final class AdminController
 
     public function saveCategory(Request $r): void
     {
+        $this->need('catalog.edit');
         $id = (int)($r->params['id'] ?? 0);
         $d = Validator::check($r->input(), [
             'name_ar' => 'required|string|max:100', 'name_en' => 'required|string|max:100',
@@ -343,6 +376,7 @@ final class AdminController
 
     public function saveKit(Request $r): void
     {
+        $this->need('catalog.edit');
         $id = (int)($r->params['id'] ?? 0);
         $d = Validator::check($r->input(), [
             'name_ar' => 'required|string|max:120', 'name_en' => 'required|string|max:120',
@@ -373,6 +407,7 @@ final class AdminController
 
     public function deleteKit(Request $r): void
     {
+        $this->need('catalog.edit');
         $id = $this->id($r);
         DB::exec('DELETE FROM kits WHERE id = ?', [$id]);
         Cache::bump('catalog');
@@ -381,6 +416,17 @@ final class AdminController
     }
 
     // ---------------- Users ----------------
+
+    private const ROLES = 'customer,staff,storekeeper,technician,admin';
+
+    /** قائمة الموظفين والفنيين لاختيارهم في محضر التسليم */
+    public function staffList(Request $r): void
+    {
+        $this->need('handover');
+        Response::json(array_map(fn($u) => ['id' => (int)$u['id'], 'name' => $u['name'], 'role' => $u['role'], 'phone' => $u['phone']], DB::all(
+            "SELECT id, name, role, phone FROM users WHERE role IN ('technician','storekeeper','staff','admin') AND status = 'active' ORDER BY FIELD(role,'technician','storekeeper','staff','admin'), name"
+        )));
+    }
 
     public function users(Request $r): void
     {
@@ -400,7 +446,7 @@ final class AdminController
         $this->adminOnly();
         $d = Validator::check($r->input(), [
             'name' => 'required|string|max:120', 'email' => 'required|email', 'phone' => 'phone',
-            'role' => 'required|in:customer,staff,admin', 'password' => 'required|string|min:8|max:200',
+            'role' => 'required|in:' . self::ROLES, 'password' => 'required|string|min:8|max:200',
         ]);
         if (!Security::passwordStrong($d['password'])) throw new HttpError(422, 'validation', 'كلمة المرور ضعيفة', ['password' => 'ضعيفة']);
         if (DB::oneW('SELECT id FROM users WHERE email = ?', [$d['email']])) throw new HttpError(409, 'exists', 'البريد مسجل مسبقاً');
@@ -415,7 +461,7 @@ final class AdminController
     {
         $this->adminOnly();
         $id = $this->id($r);
-        $d = Validator::check($r->input(), ['role' => 'in:customer,staff,admin', 'status' => 'in:active,disabled', 'password' => 'string|min:8|max:200'], true);
+        $d = Validator::check($r->input(), ['role' => 'in:' . self::ROLES, 'status' => 'in:active,disabled', 'password' => 'string|min:8|max:200', 'name' => 'string|min:2|max:120', 'phone' => 'phone'], true);
         if ($id === (int)$this->u['id'] && (($d['role'] ?? 'admin') !== 'admin' || ($d['status'] ?? 'active') !== 'active')) {
             throw new HttpError(409, 'conflict', 'لا يمكنك تعطيل حسابك أو تخفيض صلاحيتك');
         }
@@ -432,15 +478,18 @@ final class AdminController
 
     // ---------------- Settings / Import / System ----------------
 
-    private const SETTING_KEYS = ['company_name', 'company_name_ar', 'address', 'phone', 'whatsapp', 'email', 'website', 'instagram', 'facebook', 'show_prices', 'currency', 'notify_email',
-        'app_min_version_ios', 'app_min_version_android', 'app_latest_version', 'app_store_url', 'play_store_url', 'maintenance_message'];
+    public const SETTING_KEYS = ['company_name', 'company_name_ar', 'address', 'phone', 'whatsapp', 'email', 'website', 'instagram', 'facebook', 'show_prices', 'currency', 'notify_email',
+        'app_min_version_ios', 'app_min_version_android', 'app_latest_version', 'app_store_url', 'play_store_url', 'maintenance_message',
+        'home_title', 'home_subtitle', 'welcome_enabled', 'welcome_title', 'welcome_body', 'welcome_button', 'welcome_link', 'welcome_frequency'];
+    public const SETTING_IMAGES = ['hero_image', 'welcome_image'];
 
     public function settings(Request $r): void
     {
         $s = Catalog::settings();
         $out = [];
         foreach (self::SETTING_KEYS as $k) $out[$k] = $s[$k] ?? '';
-        $out['hero_image'] = Catalog::url($s['hero_image'] ?? null);
+        foreach (self::SETTING_IMAGES as $k) $out[$k] = Catalog::url($s[$k] ?? null);
+        $out['welcome_version'] = $s['welcome_version'] ?? '1';
         Response::json($out);
     }
 
@@ -448,9 +497,17 @@ final class AdminController
     {
         $this->adminOnly();
         $in = $r->input();
+        $welcomeChanged = false;
+        $old = Catalog::settings();
         foreach (self::SETTING_KEYS as $k) {
             if (!array_key_exists($k, $in)) continue;
-            DB::exec('INSERT INTO settings (k, v) VALUES (?, ?) ON DUPLICATE KEY UPDATE v = VALUES(v)', [$k, Security::cleanText((string)$in[$k], 500)]);
+            $v = Security::cleanText((string)$in[$k], $k === 'welcome_body' ? 1000 : 500);
+            if (str_starts_with($k, 'welcome_') && ($old[$k] ?? '') !== $v) $welcomeChanged = true;
+            DB::exec('INSERT INTO settings (k, v) VALUES (?, ?) ON DUPLICATE KEY UPDATE v = VALUES(v)', [$k, $v]);
+        }
+        // أي تعديل على رسالة الترحيب يجعلها تظهر من جديد لكل المستخدمين (في وضع "مرة واحدة")
+        if ($welcomeChanged || !empty($in['welcome_reshow'])) {
+            DB::exec("INSERT INTO settings (k, v) VALUES ('welcome_version', ?) ON DUPLICATE KEY UPDATE v = VALUES(v)", [(string)time()]);
         }
         Cache::bump('settings');
         Cache::bump('catalog');

@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Auth;
 use App\Cache;
 use App\Catalog;
 use App\Config;
 use App\DB;
 use App\HttpError;
+use App\Notify;
 use App\Request;
 use App\Response;
 
@@ -24,10 +26,71 @@ final class PublicController
     public function settings(Request $r): void
     {
         $s = Catalog::settings();
-        $public = ['company_name', 'company_name_ar', 'address', 'phone', 'whatsapp', 'email', 'website', 'show_prices', 'currency', 'instagram', 'facebook'];
+        $public = ['company_name', 'company_name_ar', 'address', 'phone', 'whatsapp', 'email', 'website', 'show_prices', 'currency', 'instagram', 'facebook', 'home_title', 'home_subtitle'];
         $out = array_intersect_key($s, array_flip($public));
         $out['hero_image'] = Catalog::url($s['hero_image'] ?? null);
-        Response::cached($out, 300);
+        $out['welcome'] = self::welcome($s);
+        Response::cached($out, 120);
+    }
+
+    /** رسالة الترحيب التي تظهر عند فتح التطبيق/الموقع — تُدار من لوحة التحكم */
+    public static function welcome(array $s): ?array
+    {
+        if (($s['welcome_enabled'] ?? '0') !== '1' || trim($s['welcome_title'] ?? '') === '') return null;
+        return [
+            'id' => (string)($s['welcome_version'] ?? '1'),
+            'title' => $s['welcome_title'] ?? '',
+            'body' => $s['welcome_body'] ?? '',
+            'image' => Catalog::url($s['welcome_image'] ?? null),
+            'button' => ($s['welcome_button'] ?? '') !== '' ? $s['welcome_button'] : 'متابعة',
+            'link' => $s['welcome_link'] ?? '',
+            'frequency' => in_array($s['welcome_frequency'] ?? 'once', ['once', 'always', 'daily'], true) ? $s['welcome_frequency'] : 'once',
+        ];
+    }
+
+    /** البنرات الإعلانية الفعّالة (ضمن تاريخ العرض إن وُجد) */
+    public function banners(Request $r): void
+    {
+        $v = Cache::version('banners');
+        $today = date('Y-m-d');
+        $data = Cache::remember("banners:$v:$today", 600, fn() => array_map(
+            fn($b) => ContentController::presentBanner($b),
+            DB::all('SELECT * FROM banners WHERE is_active = 1 AND image IS NOT NULL AND (starts_at IS NULL OR starts_at <= ?) AND (ends_at IS NULL OR ends_at >= ?) ORDER BY sort, id LIMIT 12', [$today, $today])
+        ));
+        Response::cached($data, 120);
+    }
+
+    /**
+     * الإشعارات: الإعلانية للجميع + إشعارات طلبات المستخدم المسجّل.
+     * الضيف (بدون حساب) يرسل رقم الطلب والهاتف لطلباته فيستلم إشعارات تغيّر حالتها.
+     * GET /notifications   أو   POST /notifications/feed  {"track":[{"ref":"GG-XXXX","phone":"07..."}]}
+     */
+    public function notifications(Request $r): void
+    {
+        $u = Auth::user();
+        $after = max(0, (int)($r->get('after') ?? 0));
+        $orderIds = [];
+        $track = $r->method === 'POST' ? ($r->input()['track'] ?? []) : [];
+        if (is_array($track) && $track) {
+            foreach (array_slice($track, 0, 20) as $t) {
+                if (!is_array($t)) continue;
+                $ref = strtoupper(trim((string)($t['ref'] ?? '')));
+                $phone = preg_replace('/\D/', '', (string)($t['phone'] ?? ''));
+                if (!preg_match('/^GG-[A-Z0-9]{4,10}$/', $ref) || strlen($phone) < 6) continue;
+                $o = DB::one('SELECT id, phone FROM orders WHERE ref = ?', [$ref]);
+                if ($o && hash_equals(preg_replace('/\D/', '', $o['phone']), $phone)) $orderIds[] = (int)$o['id'];
+            }
+        }
+        $cond = ['(n.user_id IS NULL AND n.order_id IS NULL)'];
+        $p = [];
+        if ($u) { $cond[] = 'n.user_id = ?'; $p[] = $u['id']; }
+        if ($orderIds) { $cond[] = 'n.order_id IN (' . DB::in($orderIds) . ')'; array_push($p, ...$orderIds); }
+        $p[] = $after;
+        $rows = DB::all('SELECT n.*, o.ref AS order_ref FROM notifications n LEFT JOIN orders o ON o.id = n.order_id
+            WHERE (' . implode(' OR ', $cond) . ') AND n.id > ? AND n.created_at >= DATE_SUB(NOW(), INTERVAL 120 DAY)
+            ORDER BY n.id DESC LIMIT 60', $p);
+        header('Cache-Control: no-store');
+        Response::json(array_map([Notify::class, 'present'], $rows), 200, ['latest_id' => $rows ? (int)$rows[0]['id'] : $after]);
     }
 
     /**
@@ -42,7 +105,7 @@ final class PublicController
         $current = $r->str('version', '0.0.0', 20);
         $min = $s['app_min_version_' . $platform] ?? '1.0.0';
         $latest = $s['app_latest_version'] ?? $min;
-        header('Cache-Control: public, max-age=300');
+        header('Cache-Control: public, max-age=60');
         Response::json([
             'min_version' => $min,
             'latest_version' => $latest,
@@ -55,6 +118,8 @@ final class PublicController
                 'delete_account' => $base . '/delete-account', 'support' => $base . '/support',
             ],
             'contact' => ['phone' => $s['phone'] ?? '', 'whatsapp' => $s['whatsapp'] ?? '', 'email' => $s['email'] ?? '', 'address' => $s['address'] ?? ''],
+            'welcome' => self::welcome($s),
+            'home' => ['title' => $s['home_title'] ?? '', 'subtitle' => $s['home_subtitle'] ?? ''],
         ]);
     }
 
@@ -163,11 +228,17 @@ final class PublicController
         Response::cached($data, 120);
     }
 
+    /** الماركات الفعّالة مع شعاراتها وعدد معداتها (featured=1 للواجهة الرئيسية فقط) */
     public function brands(Request $r): void
     {
         $v = Cache::version('catalog');
-        Response::cached(Cache::remember("brands:$v", 600, fn() => DB::all(
-            'SELECT brand, COUNT(*) AS count FROM equipment WHERE is_active = 1 GROUP BY brand ORDER BY count DESC, brand'
-        )), 300);
+        $featured = $r->str('featured') === '1';
+        $data = Cache::remember("brands2:$v:" . (int)$featured, 600, fn() => array_map(
+            fn($b) => ContentController::presentBrand($b),
+            DB::all('SELECT b.*, COUNT(e.id) AS n FROM brands b JOIN equipment e ON e.brand = b.name AND e.is_active = 1
+                      WHERE b.is_active = 1' . ($featured ? ' AND b.is_featured = 1' : '') . '
+                      GROUP BY b.id ORDER BY b.sort, n DESC, b.name')
+        ));
+        Response::cached($data, 300);
     }
 }

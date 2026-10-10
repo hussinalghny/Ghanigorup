@@ -197,7 +197,7 @@ class AppUser {
 
   AppUser({required this.id, required this.name, required this.email, required this.role, this.phone, this.company});
 
-  bool get isStaff => role == 'admin' || role == 'staff';
+  bool get isStaff => role == 'admin' || role == 'staff' || role == 'storekeeper';
 
   factory AppUser.fromJson(Map<String, dynamic> j) => AppUser(
         id: _int(j['id']),
@@ -207,6 +207,99 @@ class AppUser {
         phone: _strN(j['phone']),
         company: _strN(j['company']),
       );
+}
+
+/// رابط داخلي/خارجي لبنر أو إشعار
+class AppLink {
+  final String type, value;
+  const AppLink(this.type, this.value);
+  bool get isNone => type == 'none' || type.isEmpty;
+}
+
+/// بنر إعلاني في الصفحة الرئيسية
+class PromoBanner {
+  final int id;
+  final String? title, subtitle, image, buttonText;
+  final AppLink link;
+  PromoBanner({required this.id, this.title, this.subtitle, this.image, this.buttonText, required this.link});
+
+  factory PromoBanner.fromJson(Map<String, dynamic> j) => PromoBanner(
+        id: _int(j['id']),
+        title: _strN(j['title']),
+        subtitle: _strN(j['subtitle']),
+        image: _strN(j['image']),
+        buttonText: _strN(j['button_text']),
+        link: AppLink(_str(j['link_type']), _str(j['link_value'])),
+      );
+}
+
+/// ماركة / علامة تجارية
+class Brand {
+  final String name, slug;
+  final String? logo;
+  final int count;
+  Brand({required this.name, required this.slug, this.logo, this.count = 0});
+
+  factory Brand.fromJson(Map<String, dynamic> j) => Brand(
+        name: _str(j['name'] ?? j['brand']),
+        slug: _str(j['slug']),
+        logo: _strN(j['logo']),
+        count: _int(j['count']),
+      );
+}
+
+/// إشعار (إعلاني أو تحديث طلب)
+class AppNotification {
+  final int id;
+  final String type, title;
+  final String? body, image, orderRef;
+  final AppLink link;
+  final DateTime createdAt;
+  AppNotification({required this.id, required this.type, required this.title, this.body, this.image, this.orderRef, required this.link, required this.createdAt});
+
+  factory AppNotification.fromJson(Map<String, dynamic> j) => AppNotification(
+        id: _int(j['id']),
+        type: _str(j['type']),
+        title: _str(j['title']),
+        body: _strN(j['body']),
+        image: _strN(j['image']),
+        orderRef: _strN(j['order_ref']),
+        link: AppLink(_str(j['link_type']), _str(j['link_value'])),
+        createdAt: DateTime.tryParse(_str(j['created_at']).replaceFirst(' ', 'T')) ?? DateTime.now(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id, 'type': type, 'title': title, 'body': body, 'image': image, 'order_ref': orderRef,
+        'link_type': link.type, 'link_value': link.value, 'created_at': createdAt.toIso8601String(),
+      };
+}
+
+/// رسالة الترحيب عند فتح التطبيق (تُدار من لوحة التحكم)
+class WelcomeMessage {
+  final String id, title, body, button, link, frequency;
+  final String? image;
+  WelcomeMessage({required this.id, required this.title, required this.body, required this.button, required this.link, required this.frequency, this.image});
+
+  factory WelcomeMessage.fromJson(Map<String, dynamic> j) => WelcomeMessage(
+        id: _str(j['id']),
+        title: _str(j['title']),
+        body: _str(j['body']),
+        button: _str(j['button']).isEmpty ? 'متابعة' : _str(j['button']),
+        link: _str(j['link']),
+        frequency: _str(j['frequency']).isEmpty ? 'once' : _str(j['frequency']),
+        image: _strN(j['image']),
+      );
+}
+
+String timeAgo(DateTime d) {
+  final m = DateTime.now().difference(d).inMinutes;
+  if (m < 1) return 'الآن';
+  if (m < 60) return 'قبل $m دقيقة';
+  final h = m ~/ 60;
+  if (h < 24) return 'قبل $h ساعة';
+  final days = h ~/ 24;
+  if (days < 30) return 'قبل $days يوم';
+  return '${d.day} ${monthsAr[d.month - 1]}';
 }
 
 /// حالة الطلب: النص واللون ونسبة التقدم
@@ -219,17 +312,17 @@ class OrderStatus {
   static OrderStatus of(String s) {
     switch (s) {
       case 'pending':
-        return const OrderStatus('بانتظار المراجعة', C.warn, C.warnBg, .15);
+        return OrderStatus('بانتظار المراجعة', C.warn, C.warnBg, .15);
       case 'quoted':
-        return const OrderStatus('تم إرسال عرض السعر', Colors.white, C.ink, .35);
+        return OrderStatus('تم إرسال عرض السعر', C.onInk, C.ink, .35);
       case 'confirmed':
-        return const OrderStatus('مؤكد', C.ok, C.okBg, .6);
+        return OrderStatus('مؤكد', C.ok, C.okBg, .6);
       case 'out':
-        return const OrderStatus('تم الاستلام', C.ok, C.okBg, .85);
+        return OrderStatus('تم الاستلام', C.ok, C.okBg, .85);
       case 'returned':
-        return const OrderStatus('مكتمل', C.muted, C.soft, 1);
+        return OrderStatus('مكتمل', C.muted, C.soft, 1);
       case 'cancelled':
-        return const OrderStatus('ملغي', C.red, C.redBg, 1);
+        return OrderStatus('ملغي', C.red, C.redBg, 1);
       default:
         return OrderStatus(s, C.muted, C.soft, 0);
     }

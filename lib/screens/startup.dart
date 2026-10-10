@@ -28,18 +28,34 @@ class _StartupGateState extends State<StartupGate> {
     return FutureBuilder<void>(
       future: _boot,
       builder: (context, snap) {
-        if (snap.connectionState != ConnectionState.done) return const _BrandSplash();
-        final cfg = context.read<AppState>().config;
-        if (cfg.forceUpdate) return _GateScreen.update(storeUrl: cfg.storeUrl);
-        if (cfg.maintenance != null) {
-          return _GateScreen.maintenance(
-            message: cfg.maintenance!,
-            onRetry: () => setState(() {
-              _boot = context.read<AppState>().bootstrap();
-            }),
-          );
+        Widget page;
+        if (snap.connectionState != ConnectionState.done) {
+          page = const _BrandSplash(key: ValueKey('splash'));
+        } else {
+          final cfg = context.read<AppState>().config;
+          if (cfg.forceUpdate) {
+            page = _GateScreen.update(storeUrl: cfg.storeUrl);
+          } else if (cfg.maintenance != null) {
+            page = _GateScreen.maintenance(
+              message: cfg.maintenance!,
+              onRetry: () => setState(() {
+                _boot = context.read<AppState>().bootstrap();
+              }),
+            );
+          } else {
+            page = const Shell(key: ValueKey('shell'));
+          }
         }
-        return const Shell();
+        // انتقال ناعم من شاشة البداية إلى التطبيق
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 550),
+          switchInCurve: Curves.easeOutCubic,
+          transitionBuilder: (child, a) => FadeTransition(
+            opacity: a,
+            child: ScaleTransition(scale: Tween<double>(begin: 1.04, end: 1).animate(a), child: child),
+          ),
+          child: page,
+        );
       },
     );
   }
@@ -47,18 +63,30 @@ class _StartupGateState extends State<StartupGate> {
 
 /// نفس شاشة البداية الأصلية (لون الهوية + الشعار) حتى لا يحدث وميض
 class _BrandSplash extends StatelessWidget {
-  const _BrandSplash();
+  const _BrandSplash({super.key});
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: C.red,
+        backgroundColor: C.brand,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset('assets/images/logo_full.png', width: 220),
+              // نفس حجم شاشة البداية الأصلية ثم "نبضة" خفيفة
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 900),
+                curve: Curves.easeOutBack,
+                builder: (_, v, child) => Transform.scale(scale: .94 + .06 * v, child: child),
+                child: Image.asset('assets/images/logo_full.png', width: 220),
+              ),
               const SizedBox(height: 40),
-              const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 600),
+                builder: (_, v, child) => Opacity(opacity: v, child: child),
+                child: const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+              ),
             ],
           ),
         ),
@@ -98,7 +126,7 @@ class _GateScreen extends StatelessWidget {
                 Container(
                   width: 96,
                   height: 96,
-                  decoration: BoxDecoration(color: C.red, borderRadius: BorderRadius.circular(28)),
+                  decoration: BoxDecoration(color: C.brand, borderRadius: BorderRadius.circular(28)),
                   padding: const EdgeInsets.all(16),
                   child: Image.asset('assets/images/mark.png'),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghani_group/core/models.dart';
+import 'package:ghani_group/core/theme.dart';
 import 'package:ghani_group/state/cart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -72,5 +73,28 @@ void main() {
   test('Date helpers', () {
     expect(fmtYmd(DateTime(2026, 3, 7)), '2026-03-07');
     expect(fmtDay('2026-10-12'), '12 تشرين الأول');
+  });
+
+  test('Banners, brands, notifications, welcome parse', () {
+    final b = PromoBanner.fromJson({'id': 3, 'title': 'خصم', 'image': 'https://x/y.jpg', 'link_type': 'brand', 'link_value': 'ARRI'});
+    expect(b.link.type, 'brand');
+    expect(b.link.value, 'ARRI');
+    final br = Brand.fromJson({'name': 'Sony', 'slug': 'sony', 'count': 3});
+    expect(br.count, 3);
+    final n = AppNotification.fromJson({'id': 9, 'type': 'order', 'title': 'تم تأكيد الحجز', 'link_type': 'order', 'link_value': 'GG-AAAA11', 'created_at': '2026-10-10 20:00:00'});
+    expect(n.link.value, 'GG-AAAA11');
+    expect(AppNotification.fromJson(n.toJson()).id, 9);
+    final w = WelcomeMessage.fromJson({'id': '17', 'title': 'أهلاً', 'body': '', 'button': '', 'frequency': ''});
+    expect(w.button, 'متابعة');
+    expect(w.frequency, 'once');
+  });
+
+  test('Palette switches with dark mode', () {
+    C.dark = false;
+    final light = C.bg;
+    C.dark = true;
+    expect(C.bg, isNot(light));
+    expect(C.onInk, Palette.dark.onInk);
+    C.dark = false;
   });
 }

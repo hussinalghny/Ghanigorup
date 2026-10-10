@@ -7,6 +7,7 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
 import '../state/cart.dart';
+import '../state/notifications.dart';
 import '../state/session.dart';
 import '../widgets/common.dart';
 import 'item_screen.dart';
@@ -78,6 +79,7 @@ class _OrderScreenState extends State<OrderScreen> {
     final cart = context.read<CartState>();
     final app = context.read<AppState>();
     final api = context.read<ApiClient>();
+    final notifs = context.read<NotificationsState>();
     if (cart.startDate == null) {
       setState(() => _errors = {'start_date': 'اختر التاريخ'});
       showToast(context, 'اختر تاريخ الاستلام');
@@ -102,6 +104,8 @@ class _OrderScreenState extends State<OrderScreen> {
         'items': [for (final i in cart.items) {'slug': i.slug, 'qty': i.qty}],
       });
       final o = RentalOrder.fromJson(r.map);
+      // ليصل إشعار تغيّر حالة الطلب حتى بدون حساب
+      notifs.addTrack(o.ref, o.phone);
       try {
         final p = await SharedPreferences.getInstance();
         await p.setString('gg_last_ref', o.ref);
@@ -139,11 +143,17 @@ class _OrderScreenState extends State<OrderScreen> {
             children: [
               Container(width: 40, height: 5, decoration: BoxDecoration(color: C.line, borderRadius: BorderRadius.circular(5))),
               const SizedBox(height: 22),
-              Container(
-                width: 76,
-                height: 76,
-                decoration: const BoxDecoration(color: C.okBg, shape: BoxShape.circle),
-                child: const Icon(Icons.check_rounded, color: C.ok, size: 38),
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 700),
+                curve: Curves.elasticOut,
+                builder: (_, v, child) => Transform.scale(scale: v, child: child),
+                child: Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(color: C.okBg, shape: BoxShape.circle),
+                  child: Icon(Icons.check_rounded, color: C.ok, size: 38),
+                ),
               ),
               const SizedBox(height: 16),
               const Text('وصل طلبك', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
@@ -151,7 +161,7 @@ class _OrderScreenState extends State<OrderScreen> {
               Text.rich(
                 TextSpan(children: [
                   const TextSpan(text: 'رقم الطلب '),
-                  TextSpan(text: o.ref, style: const TextStyle(color: C.ink, fontWeight: FontWeight.w600)),
+                  TextSpan(text: o.ref, style: TextStyle(color: C.ink, fontWeight: FontWeight.w600)),
                   const TextSpan(text: '\nسيراجع قسم التأجير التوفر ويرسل لك عرض السعر.'),
                 ]),
                 style: Txt.muted,
@@ -165,7 +175,7 @@ class _OrderScreenState extends State<OrderScreen> {
                   decoration: BoxDecoration(color: C.warnBg, borderRadius: BorderRadius.circular(16)),
                   child: Text(
                     'تنبيه: بعض المعدات محجوزة جزئياً في هذه الفترة وسيتواصل معك الفريق لاقتراح بديل:\n${o.warnings.map((w) => '• ${w.name} — المتاح ${w.available} من ${w.requested}').join('\n')}',
-                    style: const TextStyle(color: C.warn, fontSize: 12.5, height: 1.7),
+                    style: TextStyle(color: C.warn, fontSize: 12.5, height: 1.7),
                   ),
                 ),
               ],
@@ -204,7 +214,7 @@ class _OrderScreenState extends State<OrderScreen> {
       return SafeArea(
         child: ListView(
           children: [
-            const Padding(padding: EdgeInsets.fromLTRB(20, 18, 20, 0), child: Text('الطلب', style: Txt.title)),
+            Padding(padding: EdgeInsets.fromLTRB(20, 18, 20, 0), child: Text('الطلب', style: Txt.title)),
             EmptyState(
               icon: Icons.shopping_bag_outlined,
               title: 'طلبك فارغ',
@@ -225,9 +235,9 @@ class _OrderScreenState extends State<OrderScreen> {
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
-            const Text('الطلب', style: Txt.title),
+            Text('الطلب', style: Txt.title),
             const SizedBox(height: 14),
-            for (final i in cart.items) _line(i, cart),
+            for (var k = 0; k < cart.items.length; k++) Reveal(key: ValueKey(cart.items[k].slug), index: k, child: _line(cart.items[k], cart)),
             Row(children: [
               Text('${cart.count} قطعة', style: Txt.muted),
               const Spacer(),
@@ -239,13 +249,13 @@ class _OrderScreenState extends State<OrderScreen> {
                       title: const Text('إفراغ الطلب؟'),
                       actions: [
                         TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('إلغاء')),
-                        TextButton(onPressed: () => Navigator.pop(d, true), child: const Text('إفراغ', style: TextStyle(color: C.red))),
+                        TextButton(onPressed: () => Navigator.pop(d, true), child: Text('إفراغ', style: TextStyle(color: C.red))),
                       ],
                     ),
                   );
                   if (ok == true) cart.clear();
                 },
-                child: const Text('إفراغ الطلب', style: TextStyle(color: C.muted)),
+                child: Text('إفراغ الطلب', style: TextStyle(color: C.muted)),
               ),
             ]),
             const SectionHeader('تفاصيل التصوير', padding: EdgeInsets.only(top: 18, bottom: 12)),
@@ -349,7 +359,7 @@ class _OrderScreenState extends State<OrderScreen> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.line))),
+        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: C.line))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -360,7 +370,7 @@ class _OrderScreenState extends State<OrderScreen> {
                 child: Text(value == null ? 'اختر' : fmtDay(value),
                     style: TextStyle(fontSize: 15, color: value == null ? C.muted : C.ink)),
               ),
-              const Icon(Icons.calendar_today_rounded, size: 16, color: C.muted),
+              Icon(Icons.calendar_today_rounded, size: 16, color: C.muted),
             ]),
           ],
         ),

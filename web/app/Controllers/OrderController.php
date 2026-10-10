@@ -8,6 +8,7 @@ use App\Cache;
 use App\Catalog;
 use App\DB;
 use App\HttpError;
+use App\Notify;
 use App\Request;
 use App\Response;
 use App\Security;
@@ -117,6 +118,7 @@ final class OrderController
             return DB::oneW('SELECT * FROM orders WHERE id = ?', [$id]);
         });
         Cache::bump('admin_stats');
+        Notify::orderStatus($order, 'pending');
 
         $out = self::present($order);
         $out['availability_warnings'] = Catalog::shortages(array_values($items), $d['start_date'], $d['end_date']);

@@ -4,32 +4,48 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/models.dart';
 import '../core/theme.dart';
+import 'motion.dart';
 
-/// صورة من الشبكة مع كاش ومكان مؤقت
+export 'motion.dart';
+
+/// صورة من الشبكة مع كاش ومكان مؤقت وظهور تدريجي.
+/// في الوضع الداكن تُعرض صور المنتجات (BoxFit.contain) داخل خلفية فاتحة لأن صورها بخلفية بيضاء.
 class NetImage extends StatelessWidget {
   final String? url;
   final BoxFit fit;
   final double? width, height;
-  const NetImage(this.url, {super.key, this.fit = BoxFit.contain, this.width, this.height});
+  final bool well;
+  const NetImage(this.url, {super.key, this.fit = BoxFit.contain, this.width, this.height, this.well = true});
 
   @override
   Widget build(BuildContext context) {
     if (url == null || url!.isEmpty) {
-      return SizedBox(width: width, height: height, child: const Icon(Icons.videocam_outlined, color: C.line, size: 34));
+      return SizedBox(width: width, height: height, child: Icon(Icons.videocam_outlined, color: C.line, size: 34));
     }
-    return CachedNetworkImage(
+    final img = CachedNetworkImage(
       imageUrl: url!,
       fit: fit,
       width: width,
       height: height,
-      fadeInDuration: const Duration(milliseconds: 180),
+      fadeInDuration: const Duration(milliseconds: 320),
+      fadeInCurve: Curves.easeOut,
       placeholder: (_, __) => SizedBox(width: width, height: height),
       errorWidget: (_, __, ___) => SizedBox(
         width: width,
         height: height,
-        child: const Icon(Icons.broken_image_outlined, color: C.line, size: 30),
+        child: Icon(Icons.broken_image_outlined, color: C.line, size: 30),
       ),
     );
+    if (C.dark && well && fit == BoxFit.contain) {
+      return Container(
+        width: width,
+        height: height,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(color: C.imageWell, borderRadius: BorderRadius.circular(14)),
+        child: img,
+      );
+    }
+    return img;
   }
 }
 
@@ -37,32 +53,39 @@ class NetImage extends StatelessWidget {
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
-  final Color color, fg;
+  final Color? color, fgColor;
   final bool loading, expand;
   final double height;
   final IconData? icon;
   final String? trailing;
+  final int _variant; // 0 أساسي، 1 أحمر، 2 فاتح
 
   const AppButton(
     this.label, {
     super.key,
     this.onPressed,
-    this.color = C.ink,
-    this.fg = Colors.white,
+    this.color,
+    Color? fg,
     this.loading = false,
     this.expand = true,
     this.height = 56,
     this.icon,
     this.trailing,
-  });
+  })  : fgColor = fg,
+        _variant = 0;
 
   const AppButton.red(this.label, {super.key, this.onPressed, this.loading = false, this.expand = true, this.height = 56, this.icon, this.trailing})
-      : color = C.red,
-        fg = Colors.white;
+      : color = null,
+        fgColor = null,
+        _variant = 1;
 
   const AppButton.light(this.label, {super.key, this.onPressed, this.loading = false, this.expand = true, this.height = 56, this.icon, this.trailing})
-      : color = C.soft,
-        fg = C.ink;
+      : color = null,
+        fgColor = null,
+        _variant = 2;
+
+  Color get bgColor => color ?? (_variant == 1 ? C.red : (_variant == 2 ? C.soft : C.ink));
+  Color get fg => fgColor ?? (_variant == 1 ? Colors.white : (_variant == 2 ? C.ink : C.onInk));
 
   Widget _label() => Text(label,
       overflow: TextOverflow.ellipsis,
@@ -89,10 +112,13 @@ class AppButton extends StatelessWidget {
               ],
             ],
           );
-    return Opacity(
+    return Pressable(
+      enabled: !disabled,
+      child: AnimatedOpacity(
+      duration: const Duration(milliseconds: 200),
       opacity: disabled && !loading ? .45 : 1,
       child: Material(
-        color: color,
+        color: bgColor,
         borderRadius: BorderRadius.circular(height < 48 ? 14 : 18),
         child: InkWell(
           borderRadius: BorderRadius.circular(height < 48 ? 14 : 18),
@@ -102,10 +128,11 @@ class AppButton extends StatelessWidget {
             width: expand ? double.infinity : null,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             alignment: Alignment.center,
-            child: child,
+            child: AnimatedSwitcher(duration: const Duration(milliseconds: 220), child: KeyedSubtree(key: ValueKey(loading), child: child)),
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -161,8 +188,8 @@ class QtyStepper extends StatelessWidget {
   final int value;
   final VoidCallback onInc, onDec;
   final bool compact;
-  final Color bg;
-  const QtyStepper({super.key, required this.value, required this.onInc, required this.onDec, this.compact = false, this.bg = C.surface});
+  final Color? bg;
+  const QtyStepper({super.key, required this.value, required this.onInc, required this.onDec, this.compact = false, this.bg});
 
   @override
   Widget build(BuildContext context) {
@@ -179,12 +206,19 @@ class QtyStepper extends StatelessWidget {
     return Container(
       height: h,
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(compact ? 14 : 18)),
+      decoration: BoxDecoration(color: bg ?? C.surface, borderRadius: BorderRadius.circular(compact ? 14 : 18)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           btn('+', onInc, 'زيادة'),
-          SizedBox(width: 24, child: Text('$value', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: 24,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              transitionBuilder: (c, a) => ScaleTransition(scale: a, child: FadeTransition(opacity: a, child: c)),
+              child: Text('$value', key: ValueKey(value), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
           btn('−', onDec, 'إنقاص'),
         ],
       ),
@@ -207,7 +241,7 @@ class ToggleRow extends StatelessWidget {
       onTap: () => onChanged(!value),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(border: divider ? const Border(bottom: BorderSide(color: C.line)) : null),
+        decoration: BoxDecoration(border: divider ? Border(bottom: BorderSide(color: C.line)) : null),
         child: Row(
           children: [
             Expanded(
@@ -274,7 +308,7 @@ class LabeledField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: C.line))),
+      decoration: BoxDecoration(border: last ? null : Border(bottom: BorderSide(color: C.line))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -296,7 +330,7 @@ class LabeledField extends StatelessWidget {
               border: InputBorder.none,
               counterText: '',
               hintText: hint,
-              hintStyle: const TextStyle(color: C.line, fontSize: 15),
+              hintStyle: TextStyle(color: C.line, fontSize: 15),
               contentPadding: const EdgeInsets.only(top: 6, bottom: 2),
             ),
           ),
@@ -360,10 +394,12 @@ class Skeleton extends StatelessWidget {
   const Skeleton({super.key, required this.height, this.width, this.radius = 24});
 
   @override
-  Widget build(BuildContext context) => Container(
-        height: height,
-        width: width,
-        decoration: BoxDecoration(color: C.soft, borderRadius: BorderRadius.circular(radius)),
+  Widget build(BuildContext context) => Shimmer(
+        child: Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(color: C.soft, borderRadius: BorderRadius.circular(radius)),
+        ),
       );
 }
 

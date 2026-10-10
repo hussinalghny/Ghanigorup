@@ -77,7 +77,7 @@ class _TrackScreenState extends State<TrackScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 6, 20, 40),
         children: [
-          const Text('أدخل رقم الطلب ورقم الهاتف المستخدم في الطلب.', style: Txt.muted),
+          Text('أدخل رقم الطلب ورقم الهاتف المستخدم في الطلب.', style: Txt.muted),
           const SizedBox(height: 16),
           FormCard(children: [
             LabeledField(label: 'رقم الطلب', controller: _ref, hint: 'GG-XXXXXX', ltr: true),
@@ -93,7 +93,7 @@ class _TrackScreenState extends State<TrackScreen> {
               for (var i = 0; i < _order!.items.length; i++)
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(border: i == _order!.items.length - 1 ? null : const Border(bottom: BorderSide(color: C.line))),
+                  decoration: BoxDecoration(border: i == _order!.items.length - 1 ? null : Border(bottom: BorderSide(color: C.line))),
                   child: Row(children: [
                     Expanded(
                       child: Text('${_order!.items[i].brand} ${_order!.items[i].name}', textDirection: TextDirection.ltr, textAlign: TextAlign.right),

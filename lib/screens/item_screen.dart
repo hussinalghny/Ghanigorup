@@ -13,7 +13,8 @@ import '../widgets/equipment_card.dart';
 class ItemScreen extends StatefulWidget {
   final String slug;
   final Equipment? preview;
-  const ItemScreen({super.key, required this.slug, this.preview});
+  final String? heroTag;
+  const ItemScreen({super.key, required this.slug, this.preview, this.heroTag});
 
   @override
   State<ItemScreen> createState() => _ItemScreenState();
@@ -135,17 +136,17 @@ class _ItemScreenState extends State<ItemScreen> {
       body: it == null
           ? (_error != null
               ? SafeArea(child: ErrorView(_error!, onRetry: _load))
-              : const Center(child: CircularProgressIndicator(color: C.ink)))
+              : Center(child: CircularProgressIndicator(color: C.ink)))
           : CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(child: _gallery(it, top, fav)),
-                SliverToBoxAdapter(child: _info(it)),
-                if (it.specs.isNotEmpty) SliverToBoxAdapter(child: _specs(it)),
-                SliverToBoxAdapter(child: _calendar()),
-                SliverToBoxAdapter(child: _options()),
+                SliverToBoxAdapter(child: Reveal(delay: const Duration(milliseconds: 120), child: _info(it))),
+                if (it.specs.isNotEmpty) SliverToBoxAdapter(child: Reveal(delay: const Duration(milliseconds: 200), child: _specs(it))),
+                SliverToBoxAdapter(child: Reveal(delay: const Duration(milliseconds: 280), child: _calendar())),
+                SliverToBoxAdapter(child: Reveal(delay: const Duration(milliseconds: 340), child: _options())),
                 if (it.related.isNotEmpty) ...[
                   const SliverToBoxAdapter(child: SectionHeader('من نفس القسم')),
-                  SliverToBoxAdapter(child: EquipmentRow(it.related)),
+                  SliverToBoxAdapter(child: EquipmentRow(it.related, heroPrefix: 'rel-${widget.slug}')),
                 ],
                 const SliverToBoxAdapter(child: SizedBox(height: 130)),
               ],
@@ -159,13 +160,18 @@ class _ItemScreenState extends State<ItemScreen> {
     return Container(
       height: 360 + top,
       padding: EdgeInsets.only(top: top),
-      decoration: const BoxDecoration(color: C.surface, borderRadius: BorderRadius.vertical(bottom: Radius.circular(40))),
+      decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.vertical(bottom: Radius.circular(40))),
       child: Stack(
         children: [
           Positioned.fill(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(40, 50, 40, 50),
-              child: NetImage(_mainImage ?? it.image),
+              child: widget.heroTag != null && (_mainImage == null || _mainImage == widget.preview?.image)
+                  ? Hero(tag: widget.heroTag!, child: NetImage(_mainImage ?? it.image))
+                  : AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: NetImage(_mainImage ?? it.image, key: ValueKey(_mainImage ?? it.image)),
+                    ),
             ),
           ),
           PositionedDirectional(
@@ -210,10 +216,18 @@ class _ItemScreenState extends State<ItemScreen> {
     );
   }
 
-  Widget _circleBtn(IconData icon, String label, VoidCallback onTap, {Color color = C.ink}) => Material(
+  Widget _circleBtn(IconData icon, String label, VoidCallback onTap, {Color? color}) => Material(
         color: C.bg,
         shape: const CircleBorder(),
-        child: IconButton(tooltip: label, onPressed: onTap, icon: Icon(icon, color: color, size: 20)),
+        child: IconButton(
+          tooltip: label,
+          onPressed: onTap,
+          icon: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            transitionBuilder: (c, a) => ScaleTransition(scale: Tween<double>(begin: .4, end: 1).animate(CurvedAnimation(parent: a, curve: Curves.elasticOut)), child: c),
+            child: Icon(icon, key: ValueKey(icon), color: color ?? C.ink, size: 20),
+          ),
+        ),
       );
 
   Widget _info(Equipment it) {
@@ -247,7 +261,7 @@ class _ItemScreenState extends State<ItemScreen> {
             ),
           if (it.description != null) ...[
             const SizedBox(height: 14),
-            Text(it.description!, style: const TextStyle(color: C.muted, fontSize: 14.5, height: 1.85)),
+            Text(it.description!, style: TextStyle(color: C.muted, fontSize: 14.5, height: 1.85)),
           ],
         ],
       ),
@@ -297,7 +311,7 @@ class _ItemScreenState extends State<ItemScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 30, 20, 14),
           child: Row(children: [
-            const Text('أيام الحجز', style: Txt.section),
+            Text('أيام الحجز', style: Txt.section),
             const Spacer(),
             Flexible(child: Text(label, style: Txt.muted, overflow: TextOverflow.ellipsis)),
           ]),
@@ -320,8 +334,8 @@ class _ItemScreenState extends State<ItemScreen> {
                     final booked = d.available <= 0;
                     final sel = _sel.contains(i);
                     final mid = _sel.length == 2 && i > _sel[0] && i < _sel[1];
-                    final bg = sel ? C.ink : (mid ? const Color(0xFFDAD6CE) : C.surface);
-                    final fg = sel ? Colors.white : C.ink;
+                    final bg = sel ? C.ink : (mid ? C.midSel : C.surface);
+                    final fg = sel ? C.onInk : C.ink;
                     return Opacity(
                       opacity: booked ? .35 : 1,
                       child: Material(
@@ -335,7 +349,7 @@ class _ItemScreenState extends State<ItemScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(weekdaysAr[d.date.weekday - 1], style: TextStyle(fontSize: 10, color: sel ? const Color(0xFFAAAAAA) : C.muted)),
+                                Text(weekdaysAr[d.date.weekday - 1], style: TextStyle(fontSize: 10, color: sel ? C.inkMuted : C.muted)),
                                 const SizedBox(height: 2),
                                 Text('${d.date.day}',
                                     style: TextStyle(
@@ -345,7 +359,7 @@ class _ItemScreenState extends State<ItemScreen> {
                                       decoration: booked ? TextDecoration.lineThrough : null,
                                     )),
                                 Text(booked ? 'محجوز' : '${d.available} متاح',
-                                    style: TextStyle(fontSize: 9.5, color: sel ? const Color(0xFFAAAAAA) : C.muted)),
+                                    style: TextStyle(fontSize: 9.5, color: sel ? C.inkMuted : C.muted)),
                               ],
                             ),
                           ),
@@ -375,8 +389,8 @@ class _ItemScreenState extends State<ItemScreen> {
     final n = _selDays;
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.paddingOf(context).bottom),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x00F2F0EB), C.bg], stops: [0, .3]),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [C.bg.withAlpha(0), C.bg], stops: [0, .3]),
       ),
       child: Row(
         children: [
