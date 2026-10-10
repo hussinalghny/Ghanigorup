@@ -8,6 +8,9 @@ on:
     paths-ignore: ["web/**", "docs/**", "store/**", "**.md"]
   workflow_dispatch:
 
+permissions:
+  contents: write   # لنشر الملفات في Releases برابط مباشر
+
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
@@ -41,20 +44,43 @@ jobs:
       - name: بناء التطبيق بدون توقيع
         run: flutter build ios --release --no-codesign --dart-define=SITE_URL=$SITE_URL
 
-      - name: تغليف IPA
+      # توقيع وهمي (ad-hoc / fakesign) — نفس شكل الـ IPA المتداول لأدوات
+      # ESign / Feather / Scarlet / Sideloadly / TrollStore، حتى تعيد توقيعه بشهادتك
+      - name: تغليف IPA (fakesign)
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | tr '+' '-')
-          mkdir -p build/ipa/Payload
-          cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          rm -rf build/ipa && mkdir -p build/ipa/Payload
+          ditto build/ios/iphoneos/Runner.app build/ipa/Payload/Runner.app
+          APP=build/ipa/Payload/Runner.app
+          find "$APP" -name '_CodeSignature' -type d -prune -exec rm -rf {} +
+          rm -f "$APP/embedded.mobileprovision"
+          for f in "$APP"/Frameworks/*.framework "$APP"/Frameworks/*.dylib; do
+            [ -e "$f" ] && codesign --force --sign - --timestamp=none "$f"
+          done
+          codesign --force --sign - --timestamp=none --generate-entitlement-der "$APP"
+          codesign -dv "$APP" 2>&1 | head -5
+          plutil -p "$APP/Info.plist" | grep -E 'CFBundleIdentifier|CFBundleShortVersionString|MinimumOSVersion'
           cd build/ipa
-          zip -qry "GhaniGroup-${VERSION}-unsigned.ipa" Payload
+          zip -qry "GhaniGroup-${VERSION}.ipa" Payload
           ls -lh *.ipa
 
       - uses: actions/upload-artifact@v4
         with:
-          name: GhaniGroup-iOS-unsigned-ipa
+          name: GhaniGroup-iOS-ipa
           path: build/ipa/*.ipa
           retention-days: 30
+
+      # رابط .ipa مباشر (بدون zip) في صفحة Releases
+      - name: نشر في Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-latest
+          name: آخر نسخة iOS
+          prerelease: true
+          make_latest: false
+          body: "IPA جاهز لإعادة التوقيع بشهادتك (ESign / Feather / Sideloadly …). Bundle ID: online.ghanigroup.app"
+          files: build/ipa/*.ipa
 
   android:
     name: Android — APK للتجربة
@@ -84,3 +110,13 @@ jobs:
           name: GhaniGroup-Android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
+
+      - name: نشر في Releases
+        run: cp build/app/outputs/flutter-apk/app-release.apk GhaniGroup.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: آخر نسخة Android
+          prerelease: true
+          make_latest: false
+          files: GhaniGroup.apk
