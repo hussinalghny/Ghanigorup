@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "947801280089",
+    "project_id": "ghani-app-a5a0f",
+    "storage_bucket": "ghani-app-a5a0f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:947801280089:android:663defbeb9ec441aea2b48",
+        "android_client_info": {
+          "package_name": "online.ghanigroup.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtO6jrGsH8-KKGq9k3C7Ov-65PERBIPWk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
