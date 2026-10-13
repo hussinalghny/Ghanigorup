@@ -10,7 +10,7 @@ namespace App;
  */
 final class Migrator
 {
-    public const LATEST = '2026_10_003';
+    public const LATEST = '2026_10_004';
     private const FLAG = '/storage/schema.version';
 
     public static function ensure(): void
@@ -185,6 +185,13 @@ final class Migrator
                     CONSTRAINT `fk_do_dev` FOREIGN KEY (`device_id`) REFERENCES `device_tokens`(`id`) ON DELETE CASCADE,
                     CONSTRAINT `fk_do_order` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
                 ) $T");
+            },
+
+            // موافقة الجهاز على الإشعارات الإعلانية (متطلب Apple 4.5.4)
+            '2026_10_004' => static function (\PDO $pdo) {
+                if (!self::hasColumn($pdo, 'device_tokens', 'promo')) {
+                    $pdo->exec("ALTER TABLE `device_tokens` ADD `promo` TINYINT(1) NOT NULL DEFAULT 0 AFTER `user_id`, ADD KEY `ix_dev_promo` (`promo`)");
+                }
             },
         ];
     }

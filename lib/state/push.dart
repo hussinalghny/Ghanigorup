@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api.dart';
 import '../core/firebase_options.dart';
@@ -14,7 +15,8 @@ import 'notifications.dart';
 import 'session.dart';
 
 /// الإشعارات الفورية (Firebase Cloud Messaging):
-///  - يطلب الإذن، يسجّل رمز الجهاز في السيرفر (مع الحساب أو طلبات الضيف)، ويشترك في موضوع "all" للإعلانات
+///  - يطلب الإذن، ويسجّل رمز الجهاز في السيرفر (مع الحساب أو طلبات الضيف) وموافقة المستخدم على العروض
+///  - العروض لا تصل إلا بعد موافقة صريحة (متطلب Apple 4.5.4)، وتُغيَّر من حسابي ← إشعارات العروض
 ///  - التطبيق مفتوح: نحدّث صندوق الإشعارات فيظهر التنبيه المنزلق الخاص بالتطبيق
 ///  - الضغط على إشعار والتطبيق بالخلفية/مغلق: يفتح الصفحة المرتبطة (طلب، ماركة، معدة…)
 /// إذا لم تُضف ملفات Firebase (FirebaseConfig.enabled = false) لا يفعل شيئاً.
@@ -23,7 +25,29 @@ class PushService {
   final SessionState session;
   final NotificationsState notifications;
   final void Function(AppLink link) openLink;
-  PushService({required this.api, required this.session, required this.notifications, required this.openLink});
+  final Future<bool?> Function()? askPromo;
+  PushService({required this.api, required this.session, required this.notifications, required this.openLink, this.askPromo});
+
+  static PushService? instance;
+  static const _kPromo = 'gg_promo_consent';
+
+  /// موافقة العروض: null = لم يُسأل بعد
+  static Future<bool?> promoConsent() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      return p.containsKey(_kPromo) ? p.getBool(_kPromo) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> setPromo(bool v) async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      await p.setBool(_kPromo, v);
+    } catch (_) {}
+    await register();
+  }
 
   bool _started = false;
   String? _token;
@@ -35,6 +59,7 @@ class PushService {
   Future<void> start() async {
     if (_started || !available) return;
     _started = true;
+    instance = this;
     try {
       await Firebase.initializeApp(options: FirebaseConfig.options);
       final m = FirebaseMessaging.instance;
@@ -55,11 +80,10 @@ class PushService {
       final perm = await m.requestPermission(alert: true, badge: true, sound: true);
       if (perm.authorizationStatus == AuthorizationStatus.denied) return;
 
+      // الإصدارات القديمة كانت تشترك بموضوع عام — نلغيه لأن العروض صارت حسب الموافقة
       try {
-        await m.subscribeToTopic('all');
-      } catch (e) {
-        debugPrint('push topic: $e');
-      }
+        await m.unsubscribeFromTopic('all');
+      } catch (_) {}
       _token = await _getToken(m);
       m.onTokenRefresh.listen((t) {
         _token = t;
@@ -74,6 +98,11 @@ class PushService {
       });
       notifications.onTrackChanged = register;
       await register();
+      // سؤال الموافقة على العروض مرة واحدة فقط
+      if (await promoConsent() == null && askPromo != null) {
+        final yes = await askPromo!();
+        if (yes != null) await setPromo(yes);
+      }
     } catch (e) {
       // مثلاً: توقيع بدون صلاحية Push على iOS — نكمل بالإشعارات الداخلية
       debugPrint('push disabled: $e');
@@ -99,12 +128,14 @@ class PushService {
   Future<void> register() async {
     final t = _token;
     if (t == null) return;
+    final promo = await promoConsent();
     try {
       await api.post('/devices', {
         'token': t,
         'platform': Platform.isIOS ? 'ios' : 'android',
         'app_version': _version,
         'track': notifications.track,
+        if (promo != null) 'promo': promo,
       });
     } catch (e) {
       debugPrint('push register: $e');

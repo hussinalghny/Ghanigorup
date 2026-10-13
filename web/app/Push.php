@@ -8,12 +8,11 @@ namespace App;
  *  - المفتاح: ملف حساب الخدمة (service account JSON) يُرفع من لوحة التحكم ← الإعدادات،
  *    ويُحفظ في storage/firebase/ (غير متاح للعامة).
  *  - المصادقة: JWT موقّع بـ RS256 ← access token من Google (يُخزَّن في الكاش ~55 دقيقة).
- *  - الإعلانات تُرسل لموضوع "all" (كل التطبيقات مشتركة فيه)، وتحديثات الطلبات لأجهزة صاحب الطلب.
+ *  - الإعلانات تُرسل فقط للأجهزة الموافقة على العروض (promo)، وتحديثات الطلبات لأجهزة صاحب الطلب.
  * إذا لم يُضبط Firebase تبقى الإشعارات داخل التطبيق تعمل كما هي.
  */
 final class Push
 {
-    public const TOPIC = 'all';
     private const DIR = '/storage/firebase';
     private const FILE = '/storage/firebase/service-account.json';
 
@@ -168,35 +167,57 @@ final class Push
         self::$jobs[] = $job;
     }
 
-    /** إشعار لكل المستخدمين (موضوع all) */
-    public static function broadcast(string $title, ?string $body, ?string $image = null, array $data = []): bool
+    /**
+     * إشعار لكل الأجهزة: الإعلاني (promo) يصل فقط لمن وافق على العروض، والتنبيه العام (info) لكل الأجهزة.
+     * @return int عدد الأجهزة التي وصلها
+     */
+    public static function broadcast(string $title, ?string $body, ?string $image = null, array $data = []): int
     {
-        if (!self::configured()) return false;
-        try {
-            [$code, $resp] = self::send(self::message(['topic' => self::TOPIC], $title, $body, $image, $data));
-            if ($code !== 200) Log::warn('FCM topic failed', ['code' => $code, 'body' => mb_substr($resp, 0, 300)]);
-            return $code === 200;
-        } catch (\Throwable $e) {
-            Log::error('FCM: ' . $e->getMessage());
-            return false;
-        }
+        if (!self::configured()) return 0;
+        $promoOnly = ($data['type'] ?? 'promo') === 'promo';
+        $sent = 0; $last = 0;
+        do {
+            $rows = DB::allW('SELECT id, token FROM device_tokens WHERE id > ?' . ($promoOnly ? ' AND promo = 1' : '') . ' ORDER BY id LIMIT 500', [$last]);
+            if (!$rows) break;
+            $sent += self::toDevices($rows, $title, $body, $image, $data, 500);
+            $last = (int)end($rows)['id'];
+        } while (count($rows) === 500);
+        return $sent;
     }
 
-    /** إشعار لأجهزة محددة؛ الرموز المنتهية تُحذف تلقائياً. @return int عدد المرسَل بنجاح */
-    public static function toDevices(array $devices, string $title, ?string $body, ?string $image = null, array $data = []): int
+    /** إرسال لأجهزة محددة (بالتوازي، 25 طلب معاً)؛ الرموز المنتهية تُحذف تلقائياً. @return int عدد الناجح */
+    public static function toDevices(array $devices, string $title, ?string $body, ?string $image = null, array $data = [], int $max = 50): int
     {
         if (!self::configured() || !$devices) return 0;
         $ok = 0;
         try {
-            foreach (array_slice($devices, 0, 50) as $d) {
-                [$code, $resp] = self::send(self::message(['token' => $d['token']], $title, $body, $image, $data));
-                if ($code === 200) { $ok++; continue; }
-                // UNREGISTERED / INVALID_ARGUMENT للرمز ← الجهاز حذف التطبيق
-                if ($code === 404 || ($code === 400 && str_contains($resp, 'registration token'))) {
-                    DB::exec('DELETE FROM device_tokens WHERE id = ?', [$d['id']]);
-                } else {
-                    Log::warn('FCM token failed', ['code' => $code, 'body' => mb_substr($resp, 0, 300)]);
+            $c = self::credentials();
+            $url = 'https://fcm.googleapis.com/v1/projects/' . rawurlencode($c['project_id']) . '/messages:send';
+            $token = self::accessToken();
+            foreach (array_chunk(array_slice($devices, 0, $max), 25) as $chunk) {
+                $mh = curl_multi_init(); $handles = [];
+                foreach ($chunk as $d) {
+                    $ch = curl_init($url);
+                    curl_setopt_array($ch, [
+                        CURLOPT_POST => true,
+                        CURLOPT_POSTFIELDS => json_encode(['message' => self::message(['token' => $d['token']], $title, $body, $image, $data)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        CURLOPT_HTTPHEADER => ['Content-Type: application/json; charset=utf-8', 'Authorization: Bearer ' . $token],
+                        CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 4, CURLOPT_TIMEOUT => 10, CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+                    ]);
+                    curl_multi_add_handle($mh, $ch); $handles[] = [$ch, $d];
                 }
+                do { $st = curl_multi_exec($mh, $running); if ($running) curl_multi_select($mh, 1.0); } while ($running && $st === CURLM_OK);
+                foreach ($handles as [$ch, $d]) {
+                    $code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+                    $resp = (string)curl_multi_getcontent($ch);
+                    if ($code === 200) $ok++;
+                    // UNREGISTERED / رمز غير صالح ← الجهاز حذف التطبيق
+                    elseif ($code === 404 || ($code === 400 && (str_contains($resp, 'registration token') || str_contains($resp, 'UNREGISTERED')))) DB::exec('DELETE FROM device_tokens WHERE id = ?', [$d['id']]);
+                    elseif ($code === 401) Cache::delete('fcm_access_token');
+                    else Log::warn('FCM token failed', ['code' => $code, 'body' => mb_substr($resp, 0, 300)]);
+                    curl_multi_remove_handle($mh, $ch); curl_close($ch);
+                }
+                curl_multi_close($mh);
             }
         } catch (\Throwable $e) {
             Log::error('FCM: ' . $e->getMessage());

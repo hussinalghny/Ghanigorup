@@ -7,6 +7,8 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/app_state.dart';
 import '../state/notifications.dart';
+import '../state/push.dart';
+import '../widgets/promo_consent.dart';
 import '../state/session.dart';
 import '../state/theme_state.dart';
 import '../widgets/common.dart';
@@ -554,6 +556,10 @@ class _InfoSection extends StatelessWidget {
       children: [
         const _AppearanceCard(),
         const SizedBox(height: 12),
+        if (PushService.available) ...[
+          PromoToggle(read: PushService.promoConsent, write: (v) async => PushService.instance?.setPromo(v)),
+          const SizedBox(height: 12),
+        ],
         _MenuCard(items: [
           _MenuItem(Icons.notifications_none_rounded, unread > 0 ? 'الإشعارات ($unread جديد)' : 'الإشعارات',
               () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()))),

@@ -675,7 +675,7 @@ async function drawFirebase() {
   let f;
   try { f = (await api('/admin/firebase')).data; } catch (e) { box.innerHTML = `<div class="alert red">${h(e.message)}</div>`; return; }
   const P = { ios: 'iPhone', android: 'Android', web: 'ويب' };
-  const devs = f.devices.length ? f.devices.map(d => `<span class="chip">${P[d.platform] || d.platform}: ${num(d.n)} جهاز${+d.users ? ` (${num(d.users)} مسجّل)` : ''}</span>`).join(' ') : '<span class="muted" style="font-size:12px">لا توجد أجهزة مسجّلة بعد — تُسجَّل تلقائياً عند فتح نسخة التطبيق المربوطة بـ Firebase</span>';
+  const devs = f.devices.length ? f.devices.map(d => `<span class="chip">${P[d.platform] || d.platform}: ${num(d.n)} جهاز${+d.users ? ` · ${num(d.users)} مسجّل` : ''} · ${num(d.promo)} يقبل العروض</span>`).join(' ') : '<span class="muted" style="font-size:12px">لا توجد أجهزة مسجّلة بعد — تُسجَّل تلقائياً عند فتح نسخة التطبيق المربوطة بـ Firebase</span>';
   box.innerHTML = `<h3>الإشعارات الفورية — Firebase ${f.configured ? '<span class="chip ok"><i></i>مفعّلة</span>' : '<span class="chip"><i></i>غير مفعّلة</span>'}</h3>
     ${f.configured ? `<div class="info" style="margin-bottom:12px"><div><small>المشروع</small><b class="ltr">${h(f.project_id)}</b></div><div><small>حساب الخدمة</small><b class="ltr" style="font-size:12px;word-break:break-all">${h(f.client_email)}</b></div></div>` :
       `<p class="muted" style="font-size:12.5px;line-height:1.9;margin-bottom:12px">حتى تصل الإشعارات للهاتف والتطبيق مغلق: Firebase Console ← ⚙️ Project settings ← <b>Service accounts</b> ← <b>Generate new private key</b>، ثم ارفع ملف JSON هنا. (الملف يُحفظ على السيرفر في مكان غير عام)</p>`}
@@ -813,7 +813,7 @@ async function vNotifications(params) {
         <div class="f"><label>النص</label><textarea name="body" rows="3" maxlength="1000" placeholder="تفاصيل العرض…"></textarea></div>
         <div class="f"><label>صورة (اختياري)</label><input type="file" name="image" accept="image/*" data-skip="1" id="nimg"></div>
         <div class="lnk"></div>
-        <div class="row"><div class="f"><label>النوع</label><select name="type"><option value="promo">إعلاني</option><option value="info">تنبيه عام</option></select></div><div></div></div>
+        <div class="row"><div class="f"><label>النوع</label><select name="type"><option value="promo">إعلاني — للموافقين على العروض فقط</option><option value="info">تنبيه خدمة — لكل المستخدمين (بدون تسويق)</option></select></div><div></div></div>
         <button class="btn" id="nsend" type="submit">${svg('bell', 18)} إرسال الآن</button>
       </form></div>
     <div><div class="phone"><div class="pn-top">الآن · Ghani Group</div><div class="pn"><img src="assets/brand/mark.png" alt=""><div><b id="pvT">عنوان الإشعار</b><span id="pvB">نص الإشعار يظهر هنا</span></div></div><img id="pvI" class="pn-img" alt="" hidden></div>

@@ -15,6 +15,7 @@ import '../state/session.dart';
 import '../widgets/heads_up.dart';
 import '../widgets/links.dart';
 import '../widgets/motion.dart';
+import '../widgets/promo_consent.dart';
 import '../widgets/welcome.dart';
 import 'account_screen.dart';
 import 'browse_screen.dart';
@@ -59,6 +60,11 @@ class _ShellState extends State<Shell> {
       openLink: (link) {
         final c = appNavigator.currentContext;
         if (c != null) openAppLink(c, link);
+      },
+      askPromo: () async {
+        final c = appNavigator.currentContext;
+        if (c == null || !c.mounted) return null;
+        return askPromoConsent(c);
       },
     );
     Future.delayed(const Duration(milliseconds: 1500), push.start);

@@ -302,7 +302,7 @@ final class ContentController
             'project_id' => $c['project_id'] ?? null,
             'client_email' => $c['client_email'] ?? null,
             'requirements' => ['openssl' => function_exists('openssl_sign'), 'curl' => function_exists('curl_init')],
-            'devices' => DB::all("SELECT platform, COUNT(*) n, SUM(user_id IS NOT NULL) users FROM device_tokens GROUP BY platform"),
+            'devices' => DB::all("SELECT platform, COUNT(*) n, SUM(user_id IS NOT NULL) users, SUM(promo) promo FROM device_tokens GROUP BY platform"),
         ]);
     }
 
