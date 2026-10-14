@@ -91,6 +91,7 @@ $r->get('/admin/categories', [A::class, 'categories']);
 $r->post('/admin/categories', [A::class, 'saveCategory']);
 $r->patch('/admin/categories/{id:\d+}', [A::class, 'saveCategory']);
 $r->delete('/admin/categories/{id:\d+}', [A::class, 'deleteCategory']);
+$r->post('/admin/categories/{id:\d+}/image', [A::class, 'categoryImage']);
 
 $r->get('/admin/kits', [A::class, 'kits']);
 $r->post('/admin/kits', [A::class, 'saveKit']);

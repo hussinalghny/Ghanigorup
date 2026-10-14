@@ -520,9 +520,13 @@ async function vCategories() {
     const isNew = !c; c = c || { name_ar: '', name_en: '', sort: cats.length + 1, is_active: true };
     drawer(isNew ? 'قسم جديد' : h(c.name_ar), `<form class="fm" id="cf"><div class="f"><label>الاسم بالعربية</label><input name="name_ar" value="${h(c.name_ar)}"></div><div class="f"><label>الاسم بالإنجليزية</label><input name="name_en" dir="ltr" value="${h(c.name_en)}"></div>
       <div class="row"><div class="f"><label>الترتيب</label><input type="number" name="sort" value="${c.sort}"></div><div class="f"><label>&nbsp;</label><div class="checks"><label><input type="checkbox" name="is_active" ${c.is_active ? 'checked' : ''}>ظاهر</label></div></div></div>
-      ${isNew ? '' : `<p class="muted" style="font-size:12px">صورة القسم تُؤخذ من أول معدة فيه عند الاستيراد. المعرّف: <span class="ltr">${h(c.slug)}</span></p>`}</form>`,
+      ${isNew ? '<p class="muted" style="font-size:12px">احفظ القسم أولاً ثم افتحه لرفع صورته.</p>' : `<div class="imgbox"><div class="im">${c.image ? `<img src="${h(c.image)}" alt="">` : ''}</div><div style="flex:1"><b style="font-size:13.5px">صورة القسم</b><p class="muted" style="font-size:12px;margin:4px 0 8px">تظهر في الواجهة والتطبيق — JPG أو PNG، يُفضّل خلفية بيضاء</p><div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn lt sm" style="cursor:pointer">${c.image ? 'تغيير الصورة' : 'رفع صورة'}<input type="file" accept="image/*" id="cimg" hidden data-skip="1"></label>${c.image ? '<button type="button" class="btn lt sm" id="cimgx">صورة أول معدة</button>' : ''}</div></div></div>
+      <p class="muted" style="font-size:12px">المعرّف: <span class="ltr">${h(c.slug)}</span></p>`}</form>`,
       `<button class="btn" id="save">حفظ</button>${isNew || S.user.role !== 'admin' ? '' : '<button class="btn lt" id="del" style="flex:none;color:var(--red)">حذف</button>'}`);
     $('#save').onclick = async () => { try { await api(isNew ? '/admin/categories' : '/admin/categories/' + c.id, { method: isNew ? 'POST' : 'PATCH', body: val($('#cf')) }); toast('تم الحفظ'); closeDrawer(); vCategories(); } catch (e) { markErrors($('#cf'), e.details); fail(e); } };
+    const reopen = all => { vCategories().then(() => edit(all.find(x => x.id === c.id))); };
+    if ($('#cimg')) upload($('#cimg'), `/admin/categories/${c.id}/image`).then(reopen).catch(() => {});
+    if ($('#cimgx')) $('#cimgx').onclick = async () => { const fdx = new FormData(); fdx.append('remove', '1'); try { const r = await api(`/admin/categories/${c.id}/image`, { method: 'POST', form: fdx }); toast('تم'); reopen(r.data); } catch (e) { fail(e); } };
     if ($('#del')) $('#del').onclick = async () => { if (!confirm('حذف القسم؟')) return; try { await api('/admin/categories/' + c.id, { method: 'DELETE' }); toast('تم الحذف'); closeDrawer(); vCategories(); } catch (e) { fail(e); } };
   };
   $('#addC').onclick = () => edit(null);

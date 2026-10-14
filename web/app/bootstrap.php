@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 define('ROOT', dirname(__DIR__));
 define('APP_START', microtime(true));
-define('APP_VERSION', '1.2.2');
+define('APP_VERSION', '1.2.3');
 
 spl_autoload_register(static function (string $class): void {
     if (strncmp($class, 'App\\', 4) !== 0) return;

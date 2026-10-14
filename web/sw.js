@@ -4,8 +4,8 @@
  * - بيانات API (GET): من الشبكة أولاً، ومن الكاش عند انقطاع الإنترنت
  * - الطلبات وتسجيل الدخول (POST...): من الشبكة دائماً
  */
-const VERSION = 'gg-1.2.2';
-const SHELL = ['./', 'assets/app.css?v=1.2.2', 'assets/app.js?v=1.2.2', 'assets/brand/mark.png', 'assets/brand/icon-192.png', 'manifest.webmanifest'];
+const VERSION = 'gg-1.2.3';
+const SHELL = ['./', 'assets/app.css?v=1.2.3', 'assets/app.js?v=1.2.3', 'assets/brand/mark.png', 'assets/brand/icon-192.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION + '-shell').then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

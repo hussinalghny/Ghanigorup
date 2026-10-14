@@ -349,6 +349,30 @@ final class AdminController
         $this->categories($r);
     }
 
+    /** رفع صورة القسم (أو حذفها بـ remove=1 فتعود صورة أول معدة) */
+    public function categoryImage(Request $r): void
+    {
+        $this->need('catalog.edit');
+        $id = $this->id($r);
+        $c = DB::oneW('SELECT id, image FROM categories WHERE id = ?', [$id]);
+        if (!$c) throw new HttpError(404, 'not_found', 'غير موجود');
+        if (($_POST['remove'] ?? '') === '1') {
+            $path = DB::val('SELECT image FROM equipment WHERE category_id = ? AND image IS NOT NULL AND is_active = 1 ORDER BY is_featured DESC, sort, id LIMIT 1', [$id]) ?: null;
+        } else {
+            Security::throttle('upload', 'up:' . $this->u['id'], 60, 600);
+            $path = Upload::image($_FILES['image'] ?? [], 1200);
+        }
+        DB::update('categories', ['image' => $path], 'id = :id', ['id' => $id]);
+        // الصورة القديمة قد تكون صورة معدة أو باقة — لا نحذفها إلا إذا لم تعد مستخدمة
+        $old = $c['image'];
+        if ($old && $old !== $path && !DB::oneW('SELECT id FROM equipment WHERE image = ? UNION SELECT id FROM kits WHERE image = ? UNION SELECT id FROM categories WHERE image = ? UNION SELECT id FROM equipment_images WHERE path = ?', [$old, $old, $old, $old])) {
+            Upload::remove($old);
+        }
+        Cache::bump('catalog');
+        Auth::audit('category.image', 'category', $id);
+        $this->categories($r);
+    }
+
     public function deleteCategory(Request $r): void
     {
         $this->adminOnly();
