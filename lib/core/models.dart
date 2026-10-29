@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
+import 'i18n.dart';
 
 int _int(dynamic v) => v is int ? v : (v is num ? v.toInt() : int.tryParse('$v') ?? 0);
 String _str(dynamic v) => v == null ? '' : '$v';
@@ -20,6 +21,9 @@ class GearCategory {
         image: _strN(j['image']),
         count: _int(j['count']),
       );
+
+  /// الاسم بلغة الواجهة
+  String get name => L.en && nameEn.isNotEmpty ? nameEn : nameAr;
 }
 
 class Equipment {
@@ -28,13 +32,15 @@ class Equipment {
   final String? image;
   final int qtyTotal;
   final bool isNew, isFeatured;
-  final String categorySlug, categoryAr;
+  final String categorySlug, categoryAr, categoryEn;
   final String? description;
   final Map<String, String> specs;
   final List<String> gallery;
   final List<Equipment> related;
   final int kitQty;
   final double? dailyRate;
+
+  String get categoryName => L.en && categoryEn.isNotEmpty ? categoryEn : categoryAr;
 
   Equipment({
     required this.id,
@@ -47,6 +53,7 @@ class Equipment {
     this.isFeatured = false,
     this.categorySlug = '',
     this.categoryAr = '',
+    this.categoryEn = '',
     this.description,
     this.specs = const {},
     this.gallery = const [],
@@ -72,6 +79,7 @@ class Equipment {
       isFeatured: j['is_featured'] == true,
       categorySlug: _str(cat['slug']),
       categoryAr: _str(cat['name_ar']),
+      categoryEn: _str(cat['name_en']),
       description: _strN(j['description']),
       specs: specs,
       gallery: (j['gallery'] as List? ?? const []).map((e) => '$e').toList(),
@@ -100,6 +108,9 @@ class Kit {
             .map((e) => Equipment.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
       );
+
+  /// الاسم بلغة الواجهة
+  String get name => L.en && nameEn.isNotEmpty ? nameEn : nameAr;
 }
 
 class DayAvailability {
@@ -284,7 +295,7 @@ class WelcomeMessage {
         id: _str(j['id']),
         title: _str(j['title']),
         body: _str(j['body']),
-        button: _str(j['button']).isEmpty ? 'متابعة' : _str(j['button']),
+        button: _str(j['button']).isEmpty ? tr('متابعة', 'Continue') : _str(j['button']),
         link: _str(j['link']),
         frequency: _str(j['frequency']).isEmpty ? 'once' : _str(j['frequency']),
         image: _strN(j['image']),
@@ -293,12 +304,12 @@ class WelcomeMessage {
 
 String timeAgo(DateTime d) {
   final m = DateTime.now().difference(d).inMinutes;
-  if (m < 1) return 'الآن';
-  if (m < 60) return 'قبل $m دقيقة';
+  if (m < 1) return tr('الآن', 'Just now');
+  if (m < 60) return tr('قبل $m دقيقة', '${m}m ago');
   final h = m ~/ 60;
-  if (h < 24) return 'قبل $h ساعة';
+  if (h < 24) return tr('قبل $h ساعة', '${h}h ago');
   final days = h ~/ 24;
-  if (days < 30) return 'قبل $days يوم';
+  if (days < 30) return tr('قبل $days يوم', '${days}d ago');
   return '${d.day} ${monthsAr[d.month - 1]}';
 }
 
@@ -312,17 +323,17 @@ class OrderStatus {
   static OrderStatus of(String s) {
     switch (s) {
       case 'pending':
-        return OrderStatus('بانتظار المراجعة', C.warn, C.warnBg, .15);
+        return OrderStatus(tr('بانتظار المراجعة', 'Under review'), C.warn, C.warnBg, .15);
       case 'quoted':
-        return OrderStatus('تم إرسال عرض السعر', C.onInk, C.ink, .35);
+        return OrderStatus(tr('تم إرسال عرض السعر', 'Quote sent'), C.onInk, C.ink, .35);
       case 'confirmed':
-        return OrderStatus('مؤكد', C.ok, C.okBg, .6);
+        return OrderStatus(tr('مؤكد', 'Confirmed'), C.ok, C.okBg, .6);
       case 'out':
-        return OrderStatus('تم الاستلام', C.ok, C.okBg, .85);
+        return OrderStatus(tr('تم الاستلام', 'Picked up'), C.ok, C.okBg, .85);
       case 'returned':
-        return OrderStatus('مكتمل', C.muted, C.soft, 1);
+        return OrderStatus(tr('مكتمل', 'Completed'), C.muted, C.soft, 1);
       case 'cancelled':
-        return OrderStatus('ملغي', C.red, C.redBg, 1);
+        return OrderStatus(tr('ملغي', 'Cancelled'), C.red, C.redBg, 1);
       default:
         return OrderStatus(s, C.muted, C.soft, 0);
     }
@@ -330,8 +341,12 @@ class OrderStatus {
 }
 
 // ---------- تواريخ ----------
-const monthsAr = ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'];
-const weekdaysAr = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']; // DateTime.weekday: 1 = Monday
+const _monthsAr = ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'];
+const _weekdaysAr = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']; // DateTime.weekday: 1 = Monday
+const _monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const _weekdaysEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+List<String> get monthsAr => L.en ? _monthsEn : _monthsAr;
+List<String> get weekdaysAr => L.en ? _weekdaysEn : _weekdaysAr;
 
 String fmtYmd(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';

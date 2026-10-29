@@ -7,6 +7,7 @@ import '../core/theme.dart';
 import '../screens/item_screen.dart';
 import '../state/cart.dart';
 import 'common.dart';
+import '../core/i18n.dart';
 
 void openItem(BuildContext context, Equipment e, {String? heroTag}) {
   Navigator.of(context).push(MaterialPageRoute(builder: (_) => ItemScreen(slug: e.slug, preview: e, heroTag: heroTag)));
@@ -55,7 +56,7 @@ class EquipmentCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                           decoration: BoxDecoration(color: C.red, borderRadius: BorderRadius.circular(20)),
-                          child: const Text('جديد', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                          child: Text(tr('جديد', 'New'), style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
                         ),
                       ),
                   ],
@@ -72,7 +73,7 @@ class EquipmentCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textDirection: TextDirection.ltr,
-                    textAlign: TextAlign.right,
+                    textAlign: L.en ? TextAlign.left : TextAlign.right,
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, height: 1.35),
                   ),
                 ),
@@ -84,7 +85,7 @@ class EquipmentCard extends StatelessWidget {
                       Expanded(
                         child: Text.rich(
                           TextSpan(children: [
-                            const TextSpan(text: 'في الأسطول '),
+                            TextSpan(text: tr('في الأسطول ', 'In fleet ')),
                             TextSpan(text: '${item.qtyTotal}', style: TextStyle(color: C.ink, fontWeight: FontWeight.w600)),
                           ]),
                           style: Txt.small,
@@ -92,13 +93,13 @@ class EquipmentCard extends StatelessWidget {
                       ),
                       Semantics(
                         button: true,
-                        label: inCart ? 'إزالة من الطلب' : 'أضف للطلب',
+                        label: inCart ? tr('إزالة من الطلب', 'Remove from order') : tr('أضف للطلب', 'Add to order'),
                         child: Pressable(
                           scale: .85,
                           onTap: () {
                             HapticFeedback.lightImpact();
                             final on = context.read<CartState>().toggle(item);
-                            showToast(context, on ? '${item.name} أضيفت للطلب' : 'أزيلت من الطلب');
+                            showToast(context, on ? tr('${item.name} أضيفت للطلب', '${item.name} added to your order') : tr('أزيلت من الطلب', 'Removed from order'));
                           },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 260),

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ghani_group/core/i18n.dart';
 import 'package:ghani_group/core/models.dart';
 import 'package:ghani_group/core/theme.dart';
 import 'package:ghani_group/state/cart.dart';
@@ -51,6 +52,19 @@ void main() {
     expect(o.warnings.single.available, 1);
     expect(fmtNumber(o.quoteAmount!), '750,000');
     expect(OrderStatus.of('confirmed').label, 'مؤكد');
+  });
+
+  test('English UI strings and API names', () {
+    L.en = true;
+    try {
+      expect(OrderStatus.of('confirmed').label, 'Confirmed');
+      expect(alexa.categoryName, 'Cameras');
+      expect(fmtDay('2026-10-12'), '12 Oct');
+      expect(tr('حفظ', 'Save'), 'Save');
+    } finally {
+      L.en = false;
+    }
+    expect(alexa.categoryName, 'كاميرات');
   });
 
   test('Cart respects fleet quantity and persists', () async {

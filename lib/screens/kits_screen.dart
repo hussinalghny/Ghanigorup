@@ -7,6 +7,7 @@ import '../core/theme.dart';
 import '../state/cart.dart';
 import '../widgets/common.dart';
 import '../widgets/equipment_card.dart';
+import '../core/i18n.dart';
 
 class KitsScreen extends StatefulWidget {
   const KitsScreen({super.key});
@@ -34,13 +35,13 @@ class _KitsScreenState extends State<KitsScreen> {
     for (final e in k.items) {
       if (!c.has(e.slug)) c.add(e, e.kitQty);
     }
-    showToast(context, '${k.nameAr} أضيفت للطلب');
+    showToast(context, tr('${k.nameAr} أضيفت للطلب', '${k.name} added to your order'));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('باقات جاهزة', style: TextStyle(fontWeight: FontWeight.w600))),
+      appBar: AppBar(title: Text(tr('باقات جاهزة', 'Ready kits'), style: TextStyle(fontWeight: FontWeight.w600))),
       body: FutureBuilder<List<Kit>>(
         future: _future,
         builder: (context, snap) {
@@ -54,7 +55,7 @@ class _KitsScreenState extends State<KitsScreen> {
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(20, 4, 20, 0),
-                child: Text('مجموعات معدات مجرّبة لأنواع التصوير الأكثر طلباً. أضف الباقة كاملة ثم عدّل الكميات من صفحة الطلب.', style: Txt.muted),
+                child: Text(tr('مجموعات معدات مجرّبة لأنواع التصوير الأكثر طلباً. أضف الباقة كاملة ثم عدّل الكميات من صفحة الطلب.', 'Proven gear sets for the most common shoots. Add a whole kit, then adjust quantities on the order page.'), style: Txt.muted),
               ),
               for (final k in kits) ...[
                 Padding(
@@ -65,12 +66,12 @@ class _KitsScreenState extends State<KitsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(k.nameAr, style: Txt.section),
-                            Text('${k.nameEn} · ${k.items.length} قطع', style: Txt.small),
+                            Text(k.name, style: Txt.section),
+                            Text(tr('${k.nameEn} · ${k.items.length} قطع', '${k.items.length} pcs'), style: Txt.small),
                           ],
                         ),
                       ),
-                      AppButton('أضف الباقة', onPressed: () => _addKit(k), expand: false, height: 42),
+                      AppButton(tr('أضف الباقة', 'Add kit'), onPressed: () => _addKit(k), expand: false, height: 42),
                     ],
                   ),
                 ),

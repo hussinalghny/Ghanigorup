@@ -12,6 +12,7 @@ import '../state/session.dart';
 import '../widgets/common.dart';
 import 'item_screen.dart';
 import 'track_screen.dart';
+import '../core/i18n.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -59,7 +60,7 @@ class _OrderScreenState extends State<OrderScreen> {
       initialDate: current.isBefore(first) ? first : current,
       firstDate: first,
       lastDate: today.add(const Duration(days: 365)),
-      helpText: start ? 'تاريخ الاستلام' : 'تاريخ الإرجاع',
+      helpText: start ? tr('تاريخ الاستلام', 'Pickup date') : tr('تاريخ الإرجاع', 'Return date'),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(colorScheme: Theme.of(ctx).colorScheme.copyWith(primary: C.ink)),
         child: child!,
@@ -81,8 +82,8 @@ class _OrderScreenState extends State<OrderScreen> {
     final api = context.read<ApiClient>();
     final notifs = context.read<NotificationsState>();
     if (cart.startDate == null) {
-      setState(() => _errors = {'start_date': 'اختر التاريخ'});
-      showToast(context, 'اختر تاريخ الاستلام');
+      setState(() => _errors = {'start_date': tr('اختر التاريخ', 'Pick a date')});
+      showToast(context, tr('اختر تاريخ الاستلام', 'Pick a pickup date'));
       return;
     }
     setState(() {
@@ -128,7 +129,7 @@ class _OrderScreenState extends State<OrderScreen> {
 
   void _showSuccess(RentalOrder o, String whatsapp) {
     final lines = o.items.map((i) => '- ${i.brand} ${i.name} ×${i.qty}').join('\n');
-    final text = 'طلب عرض سعر ${o.ref}\n${o.project != null ? 'المشروع: ${o.project}\n' : ''}${fmtDay(o.startDate)} ← ${fmtDay(o.endDate)}\n$lines';
+    final text = tr('طلب عرض سعر ${o.ref}\n${o.project != null ? 'المشروع: ${o.project}\n' : ''}${fmtDay(o.startDate)} ← ${fmtDay(o.endDate)}\n$lines', 'Quote request ${o.ref}\n${o.project != null ? 'Project: ${o.project}\n' : ''}${fmtDay(o.startDate)} → ${fmtDay(o.endDate)}\n$lines');
     final loggedIn = context.read<SessionState>().loggedIn;
     showModalBottomSheet<void>(
       context: context,
@@ -156,13 +157,13 @@ class _OrderScreenState extends State<OrderScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('وصل طلبك', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+              Text(tr('وصل طلبك', 'Request received'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               Text.rich(
                 TextSpan(children: [
-                  const TextSpan(text: 'رقم الطلب '),
+                  TextSpan(text: tr('رقم الطلب ', 'Order number ')),
                   TextSpan(text: o.ref, style: TextStyle(color: C.ink, fontWeight: FontWeight.w600)),
-                  const TextSpan(text: '\nسيراجع قسم التأجير التوفر ويرسل لك عرض السعر.'),
+                  TextSpan(text: tr('\nسيراجع قسم التأجير التوفر ويرسل لك عرض السعر.', '\nThe rental desk will check availability and send you a quote.')),
                 ]),
                 style: Txt.muted,
                 textAlign: TextAlign.center,
@@ -174,16 +175,16 @@ class _OrderScreenState extends State<OrderScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(color: C.warnBg, borderRadius: BorderRadius.circular(16)),
                   child: Text(
-                    'تنبيه: بعض المعدات محجوزة جزئياً في هذه الفترة وسيتواصل معك الفريق لاقتراح بديل:\n${o.warnings.map((w) => '• ${w.name} — المتاح ${w.available} من ${w.requested}').join('\n')}',
+                    tr('تنبيه: بعض المعدات محجوزة جزئياً في هذه الفترة وسيتواصل معك الفريق لاقتراح بديل:\n${o.warnings.map((w) => '• ${w.name} — المتاح ${w.available} من ${w.requested}').join('\n')}', 'Note: some items are partly booked in this period. The team will contact you with an alternative:\n${o.warnings.map((w) => '• ${w.name} — ${w.available} of ${w.requested} available').join('\n')}'),
                     style: TextStyle(color: C.warn, fontSize: 12.5, height: 1.7),
                   ),
                 ),
               ],
               const SizedBox(height: 20),
-              AppButton('متابعة عبر واتساب', icon: Icons.chat_rounded, onPressed: () => openLink(ctx, whatsappUrl(whatsapp, text))),
+              AppButton(tr('متابعة عبر واتساب', 'Continue on WhatsApp'), icon: Icons.chat_rounded, onPressed: () => openLink(ctx, whatsappUrl(whatsapp, text))),
               const SizedBox(height: 10),
               AppButton.light(
-                loggedIn ? 'طلباتي' : 'تتبع الطلب',
+                loggedIn ? tr('طلباتي', 'My orders') : tr('تتبع الطلب', 'Track order'),
                 onPressed: () {
                   Navigator.of(ctx).pop();
                   if (loggedIn) {
@@ -214,12 +215,12 @@ class _OrderScreenState extends State<OrderScreen> {
       return SafeArea(
         child: ListView(
           children: [
-            Padding(padding: EdgeInsets.fromLTRB(20, 18, 20, 0), child: Text('الطلب', style: Txt.title)),
+            Padding(padding: EdgeInsets.fromLTRB(20, 18, 20, 0), child: Text(tr('الطلب', 'Order'), style: Txt.title)),
             EmptyState(
               icon: Icons.shopping_bag_outlined,
-              title: 'طلبك فارغ',
-              message: 'أضف معدات أو باقة جاهزة\nونرسل لك عرض السعر.',
-              action: 'تصفّح المعدات',
+              title: tr('طلبك فارغ', 'Your order is empty'),
+              message: tr('أضف معدات أو باقة جاهزة\nونرسل لك عرض السعر.', 'Add gear or a ready kit\nand we will send you a quote.'),
+              action: tr('تصفّح المعدات', 'Browse gear'),
               onAction: () => context.read<AppState>().openBrowse(),
             ),
           ],
@@ -235,50 +236,50 @@ class _OrderScreenState extends State<OrderScreen> {
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
-            Text('الطلب', style: Txt.title),
+            Text(tr('الطلب', 'Order'), style: Txt.title),
             const SizedBox(height: 14),
             for (var k = 0; k < cart.items.length; k++) Reveal(key: ValueKey(cart.items[k].slug), index: k, child: _line(cart.items[k], cart)),
             Row(children: [
-              Text('${cart.count} قطعة', style: Txt.muted),
+              Text(tr('${cart.count} قطعة', '${cart.count} pcs'), style: Txt.muted),
               const Spacer(),
               TextButton(
                 onPressed: () async {
                   final ok = await showDialog<bool>(
                     context: context,
                     builder: (d) => AlertDialog(
-                      title: const Text('إفراغ الطلب؟'),
+                      title: Text(tr('إفراغ الطلب؟', 'Clear the order?')),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('إلغاء')),
-                        TextButton(onPressed: () => Navigator.pop(d, true), child: Text('إفراغ', style: TextStyle(color: C.red))),
+                        TextButton(onPressed: () => Navigator.pop(d, false), child: Text(tr('إلغاء', 'Cancel'))),
+                        TextButton(onPressed: () => Navigator.pop(d, true), child: Text(tr('إفراغ', 'Clear'), style: TextStyle(color: C.red))),
                       ],
                     ),
                   );
                   if (ok == true) cart.clear();
                 },
-                child: Text('إفراغ الطلب', style: TextStyle(color: C.muted)),
+                child: Text(tr('إفراغ الطلب', 'Clear order'), style: TextStyle(color: C.muted)),
               ),
             ]),
-            const SectionHeader('تفاصيل التصوير', padding: EdgeInsets.only(top: 18, bottom: 12)),
+            SectionHeader(tr('تفاصيل التصوير', 'Shoot details'), padding: EdgeInsets.only(top: 18, bottom: 12)),
             FormCard(children: [
               Row(children: [
-                Expanded(child: _dateField('تاريخ الاستلام', cart.startDate, () => _pickDate(true), _errors['start_date']?.toString())),
+                Expanded(child: _dateField(tr('تاريخ الاستلام', 'Pickup date'), cart.startDate, () => _pickDate(true), _errors['start_date']?.toString())),
                 const SizedBox(width: 16),
-                Expanded(child: _dateField('تاريخ الإرجاع', cart.endDate, () => _pickDate(false), _errors['end_date']?.toString())),
+                Expanded(child: _dateField(tr('تاريخ الإرجاع', 'Return date'), cart.endDate, () => _pickDate(false), _errors['end_date']?.toString())),
               ]),
-              LabeledField(label: 'اسم المشروع', controller: _project, hint: 'مثلاً: إعلان حملة الشتاء', maxLength: 150, error: _errors['project']?.toString()),
-              LabeledField(label: 'موقع التصوير', controller: _location, hint: 'بغداد — المنصور', maxLength: 190, last: true, error: _errors['location']?.toString()),
+              LabeledField(label: tr('اسم المشروع', 'Project name'), controller: _project, hint: tr('مثلاً: إعلان حملة الشتاء', 'e.g. Winter campaign ad'), maxLength: 150, error: _errors['project']?.toString()),
+              LabeledField(label: tr('موقع التصوير', 'Shoot location'), controller: _location, hint: tr('بغداد — المنصور', 'Baghdad — Al-Mansour'), maxLength: 190, last: true, error: _errors['location']?.toString()),
             ]),
             const SizedBox(height: 12),
             FormCard(children: [
-              ToggleRow(title: 'فني / مشغّل مع المعدات', value: cart.technician, onChanged: cart.setTechnician),
-              ToggleRow(title: 'توصيل إلى الموقع', value: cart.delivery, onChanged: cart.setDelivery, divider: false),
+              ToggleRow(title: tr('فني / مشغّل مع المعدات', 'Technician / operator with the gear'), value: cart.technician, onChanged: cart.setTechnician),
+              ToggleRow(title: tr('توصيل إلى الموقع', 'Delivery to location'), value: cart.delivery, onChanged: cart.setDelivery, divider: false),
             ]),
-            const SectionHeader('بيانات التواصل', padding: EdgeInsets.only(top: 26, bottom: 12)),
+            SectionHeader(tr('بيانات التواصل', 'Contact details'), padding: EdgeInsets.only(top: 26, bottom: 12)),
             AutofillGroup(
               child: FormCard(children: [
-                LabeledField(label: 'الاسم', controller: _name, autofill: const [AutofillHints.name], maxLength: 120, error: _errors['contact_name']?.toString()),
+                LabeledField(label: tr('الاسم', 'Name'), controller: _name, autofill: const [AutofillHints.name], maxLength: 120, error: _errors['contact_name']?.toString()),
                 LabeledField(
-                    label: 'رقم الهاتف',
+                    label: tr('رقم الهاتف', 'Phone number'),
                     controller: _phone,
                     keyboard: TextInputType.phone,
                     ltr: true,
@@ -286,23 +287,23 @@ class _OrderScreenState extends State<OrderScreen> {
                     autofill: const [AutofillHints.telephoneNumber],
                     error: _errors['phone']?.toString()),
                 LabeledField(
-                    label: 'البريد (اختياري)',
+                    label: tr('البريد (اختياري)', 'Email (optional)'),
                     controller: _email,
                     keyboard: TextInputType.emailAddress,
                     ltr: true,
                     autofill: const [AutofillHints.email],
                     error: _errors['email']?.toString()),
-                LabeledField(label: 'ملاحظات', controller: _notes, maxLines: 3, maxLength: 2000, last: true),
+                LabeledField(label: tr('ملاحظات', 'Notes'), controller: _notes, maxLines: 3, maxLength: 2000, last: true),
               ]),
             ),
             const SizedBox(height: 14),
             Row(children: [
-              Text('التسعير', style: Txt.muted),
+              Text(tr('التسعير', 'Pricing'), style: Txt.muted),
               const Spacer(),
-              const Text('عرض سعر رسمي من قسم التأجير', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+              Text(tr('عرض سعر رسمي من قسم التأجير', 'Official quote from the rental desk'), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             ]),
             const SizedBox(height: 16),
-            AppButton.red('إرسال طلب عرض السعر', loading: _sending, onPressed: _submit),
+            AppButton.red(tr('إرسال طلب عرض السعر', 'Send quote request'), loading: _sending, onPressed: _submit),
           ],
         ),
       ),
@@ -342,7 +343,7 @@ class _OrderScreenState extends State<OrderScreen> {
             value: i.qty,
             onInc: () {
               if (i.qty >= i.max) {
-                showToast(context, 'الحد الأقصى في الأسطول: ${i.max}');
+                showToast(context, tr('الحد الأقصى في الأسطول: ${i.max}', 'Fleet maximum: ${i.max}'));
                 return;
               }
               cart.setQty(i.slug, i.qty + 1);
@@ -367,7 +368,7 @@ class _OrderScreenState extends State<OrderScreen> {
             const SizedBox(height: 6),
             Row(children: [
               Expanded(
-                child: Text(value == null ? 'اختر' : fmtDay(value),
+                child: Text(value == null ? tr('اختر', 'Select') : fmtDay(value),
                     style: TextStyle(fontSize: 15, color: value == null ? C.muted : C.ink)),
               ),
               Icon(Icons.calendar_today_rounded, size: 16, color: C.muted),

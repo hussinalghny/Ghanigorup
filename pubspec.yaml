@@ -4,7 +4,7 @@ publish_to: "none"
 
 # version: <اسم الإصدار>+<رقم البناء>
 # Codemagic يزيد رقم البناء تلقائياً عند كل رفع (انظر codemagic.yaml)
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
@@ -65,12 +65,12 @@ flutter_launcher_icons:
 
 # ---------- شاشة البداية (تُولَّد بـ: dart run flutter_native_splash:create) ----------
 flutter_native_splash:
-  color: "#B82619"
+  color: "#EF2B4B"
   image: "brand/splash-logo.png"
   android_12:
-    color: "#B82619"
+    color: "#EF2B4B"
     image: "brand/splash-android12.png"
-    icon_background_color: "#B82619"
+    icon_background_color: "#EF2B4B"
   ios_content_mode: center
   fullscreen: false
   web: false

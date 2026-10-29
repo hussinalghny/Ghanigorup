@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import 'motion.dart';
+import '../core/i18n.dart';
 
 export 'motion.dart';
 
@@ -210,7 +211,7 @@ class QtyStepper extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          btn('+', onInc, 'زيادة'),
+          btn('+', onInc, tr('زيادة', 'Increase')),
           SizedBox(
             width: 24,
             child: AnimatedSwitcher(
@@ -219,7 +220,7 @@ class QtyStepper extends StatelessWidget {
               child: Text('$value', key: ValueKey(value), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
-          btn('−', onDec, 'إنقاص'),
+          btn('−', onDec, tr('إنقاص', 'Decrease')),
         ],
       ),
     );
@@ -380,9 +381,9 @@ class ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => EmptyState(
         icon: Icons.wifi_off_rounded,
-        title: 'تعذر التحميل',
+        title: tr('تعذر التحميل', "Couldn't load"),
         message: '$error',
-        action: 'إعادة المحاولة',
+        action: tr('إعادة المحاولة', 'Try again'),
         onAction: onRetry,
       );
 }
@@ -419,7 +420,7 @@ Future<void> openLink(BuildContext context, String url, {bool inApp = false}) as
   } catch (_) {
     ok = false;
   }
-  if (!ok && context.mounted) showToast(context, 'تعذر فتح الرابط');
+  if (!ok && context.mounted) showToast(context, tr('تعذر فتح الرابط', "Couldn't open the link"));
 }
 
 String whatsappUrl(String number, String text) =>

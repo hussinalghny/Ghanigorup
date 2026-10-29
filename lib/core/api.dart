@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import 'config.dart';
+import 'i18n.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -79,6 +80,7 @@ class ApiClient {
     final req = http.Request(method, uri);
     req.headers['Accept'] = 'application/json';
     req.headers['X-Client'] = 'app';
+    req.headers['Accept-Language'] = L.code;
     req.headers['User-Agent'] = 'GhaniGroupApp/1.0 (${Platform.operatingSystem})';
     if (hasToken) req.headers['Authorization'] = 'Bearer $_token';
     if (body != null) {
@@ -91,20 +93,20 @@ class ApiClient {
       final streamed = await _http.send(req).timeout(const Duration(seconds: 20));
       res = await http.Response.fromStream(streamed).timeout(const Duration(seconds: 30));
     } on TimeoutException {
-      throw ApiException('انتهت مهلة الاتصال، حاول مرة أخرى');
+      throw ApiException(tr('انتهت مهلة الاتصال، حاول مرة أخرى', 'Connection timed out, please try again'));
     } on SocketException {
-      throw ApiException('لا يوجد اتصال بالإنترنت');
+      throw ApiException(tr('لا يوجد اتصال بالإنترنت', 'No internet connection'));
     } on http.ClientException {
-      throw ApiException('تعذر الاتصال بالسيرفر');
+      throw ApiException(tr('تعذر الاتصال بالسيرفر', "Couldn't reach the server"));
     } on HandshakeException {
-      throw ApiException('تعذر إنشاء اتصال آمن بالسيرفر');
+      throw ApiException(tr('تعذر إنشاء اتصال آمن بالسيرفر', "Couldn't create a secure connection to the server"));
     }
 
     Map<String, dynamic> json;
     try {
       json = Map<String, dynamic>.from(jsonDecode(utf8.decode(res.bodyBytes)) as Map);
     } catch (_) {
-      throw ApiException('استجابة غير متوقعة من السيرفر (${res.statusCode})', status: res.statusCode);
+      throw ApiException(tr('استجابة غير متوقعة من السيرفر (${res.statusCode})', 'Unexpected server response (${res.statusCode})'), status: res.statusCode);
     }
 
     if (json['ok'] != true) {
@@ -115,7 +117,7 @@ class ApiClient {
       }
       final details = err['details'];
       throw ApiException(
-        err['message']?.toString() ?? 'حدث خطأ',
+        err['message']?.toString() ?? tr('حدث خطأ', 'Something went wrong'),
         status: res.statusCode,
         code: err['code']?.toString() ?? '',
         details: details is Map ? Map<String, dynamic>.from(details) : const {},

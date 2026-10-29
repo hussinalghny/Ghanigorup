@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../core/api.dart';
 import '../core/config.dart';
 import '../core/models.dart';
+import '../core/i18n.dart';
 
 class RemoteConfig {
   final bool forceUpdate, updateAvailable;
@@ -60,8 +61,11 @@ class AppState extends ChangeNotifier {
 
   String get whatsapp => (settings['whatsapp'] ?? '').isNotEmpty ? settings['whatsapp']! : AppConfig.fallbackWhatsapp;
   String get phone => (settings['phone'] ?? '').isNotEmpty ? settings['phone']! : AppConfig.fallbackPhone;
-  String get homeTitle => config.homeTitle.isNotEmpty ? config.homeTitle : ((settings['home_title'] ?? '').isNotEmpty ? settings['home_title']! : 'ماذا ستصوّر');
-  String get homeSubtitle => config.homeTitle.isNotEmpty ? config.homeSubtitle : (settings['home_subtitle'] ?? 'هذا الأسبوع؟');
+  // عناوين الرئيسية من لوحة التحكم عربية — بالإنكليزية نعرض عنواناً ثابتاً
+  String get homeTitle => L.en ? 'What are you shooting' : _homeTitleAr;
+  String get homeSubtitle => L.en ? 'this week?' : _homeSubtitleAr;
+  String get _homeTitleAr => config.homeTitle.isNotEmpty ? config.homeTitle : ((settings['home_title'] ?? '').isNotEmpty ? settings['home_title']! : 'ماذا ستصوّر');
+  String get _homeSubtitleAr => config.homeTitle.isNotEmpty ? config.homeSubtitle : (settings['home_subtitle'] ?? 'هذا الأسبوع؟');
 
   String get currency => (settings['currency'] ?? '').isNotEmpty ? settings['currency']! : 'IQD';
 

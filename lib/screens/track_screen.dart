@@ -7,6 +7,7 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import 'account_screen.dart';
+import '../core/i18n.dart';
 
 /// تتبع طلب بدون حساب: رقم الطلب + رقم الهاتف
 class TrackScreen extends StatefulWidget {
@@ -73,20 +74,20 @@ class _TrackScreenState extends State<TrackScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('تتبع طلب', style: TextStyle(fontWeight: FontWeight.w600))),
+      appBar: AppBar(title: Text(tr('تتبع طلب', 'Track an order'), style: TextStyle(fontWeight: FontWeight.w600))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 6, 20, 40),
         children: [
-          Text('أدخل رقم الطلب ورقم الهاتف المستخدم في الطلب.', style: Txt.muted),
+          Text(tr('أدخل رقم الطلب ورقم الهاتف المستخدم في الطلب.', 'Enter the order number and the phone number used for the order.'), style: Txt.muted),
           const SizedBox(height: 16),
           FormCard(children: [
-            LabeledField(label: 'رقم الطلب', controller: _ref, hint: 'GG-XXXXXX', ltr: true),
-            LabeledField(label: 'رقم الهاتف', controller: _phone, keyboard: TextInputType.phone, ltr: true, last: true),
+            LabeledField(label: tr('رقم الطلب', 'Order number'), controller: _ref, hint: 'GG-XXXXXX', ltr: true),
+            LabeledField(label: tr('رقم الهاتف', 'Phone number'), controller: _phone, keyboard: TextInputType.phone, ltr: true, last: true),
           ]),
           const SizedBox(height: 14),
-          AppButton('عرض الحالة', loading: _loading, onPressed: _go),
+          AppButton(tr('عرض الحالة', 'Show status'), loading: _loading, onPressed: _go),
           const SizedBox(height: 20),
-          if (_error != null) EmptyState(icon: Icons.search_off_rounded, title: 'لم يتم العثور على الطلب', message: _error!),
+          if (_error != null) EmptyState(icon: Icons.search_off_rounded, title: tr('لم يتم العثور على الطلب', 'Order not found'), message: _error!),
           if (_order != null) ...[
             OrderCard(_order!, showCancel: false),
             FormCard(children: [
@@ -96,7 +97,7 @@ class _TrackScreenState extends State<TrackScreen> {
                   decoration: BoxDecoration(border: i == _order!.items.length - 1 ? null : Border(bottom: BorderSide(color: C.line))),
                   child: Row(children: [
                     Expanded(
-                      child: Text('${_order!.items[i].brand} ${_order!.items[i].name}', textDirection: TextDirection.ltr, textAlign: TextAlign.right),
+                      child: Text('${_order!.items[i].brand} ${_order!.items[i].name}', textDirection: TextDirection.ltr, textAlign: L.en ? TextAlign.left : TextAlign.right),
                     ),
                     const SizedBox(width: 10),
                     Text('×${_order!.items[i].qty}', style: const TextStyle(fontWeight: FontWeight.w600)),

@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api.dart';
+import 'core/i18n.dart';
 import 'core/theme.dart';
 import 'screens/startup.dart';
 import 'state/app_state.dart';
@@ -24,6 +25,8 @@ Future<void> main() async {
 
   final theme = ThemeState();
   await theme.load();
+  final lang = LangState();
+  await lang.load();
   SystemChrome.setSystemUIOverlayStyle(AppTheme.overlay(C.dark));
 
   final api = ApiClient();
@@ -37,6 +40,7 @@ Future<void> main() async {
       providers: [
         Provider<ApiClient>.value(value: api),
         ChangeNotifierProvider<ThemeState>.value(value: theme),
+        ChangeNotifierProvider<LangState>.value(value: lang),
         ChangeNotifierProvider(create: (_) => AppState(api)),
         ChangeNotifierProvider<SessionState>.value(value: session),
         ChangeNotifierProvider<CartState>.value(value: cart),
@@ -62,16 +66,30 @@ class _GhaniAppState extends State<GhaniApp> with SingleTickerProviderStateMixin
   ui.Image? _snapshot;
   Offset _center = Offset.zero;
   late final ThemeState _theme = context.read<ThemeState>();
+  late final LangState _lang = context.read<LangState>();
 
   @override
   void initState() {
     super.initState();
     _theme.addListener(_onTheme);
+    _lang.addListener(_onLang);
+  }
+
+  /// تغيير اللغة: النصوص تُقرأ وقت البناء، لذا نعيد بناء كل الشاشات
+  void _onLang() {
+    setState(() {});
+    void visit(Element e) {
+      e.markNeedsBuild();
+      e.visitChildren(visit);
+    }
+
+    (context as Element).visitChildren(visit);
   }
 
   @override
   void dispose() {
     _theme.removeListener(_onTheme);
+    _lang.removeListener(_onLang);
     _reveal.dispose();
     _snapshot?.dispose();
     super.dispose();
@@ -120,6 +138,7 @@ class _GhaniAppState extends State<GhaniApp> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     context.watch<ThemeState>();
+    context.watch<LangState>();
     final dark = C.dark;
     return MaterialApp(
       title: 'Ghani Group',
@@ -128,7 +147,7 @@ class _GhaniAppState extends State<GhaniApp> with SingleTickerProviderStateMixin
       darkTheme: AppTheme.build(true),
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
       themeAnimationDuration: Duration.zero,
-      locale: const Locale('ar'),
+      locale: Locale(L.code),
       supportedLocales: const [Locale('ar'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

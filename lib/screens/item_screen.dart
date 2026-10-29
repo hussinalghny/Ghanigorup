@@ -9,6 +9,7 @@ import '../state/cart.dart';
 import '../state/session.dart';
 import '../widgets/common.dart';
 import '../widgets/equipment_card.dart';
+import '../core/i18n.dart';
 
 class ItemScreen extends StatefulWidget {
   final String slug;
@@ -92,7 +93,7 @@ class _ItemScreenState extends State<ItemScreen> {
         final lo = _sel[0] < i ? _sel[0] : i;
         final hi = _sel[0] < i ? i : _sel[0];
         if (_days.sublist(lo, hi + 1).any((d) => d.available <= 0)) {
-          showToast(context, 'يوجد يوم محجوز ضمن المدة');
+          showToast(context, tr('يوجد يوم محجوز ضمن المدة', 'A booked day falls within this range'));
           _sel = [i];
         } else {
           _sel = [lo, hi];
@@ -105,12 +106,12 @@ class _ItemScreenState extends State<ItemScreen> {
   Future<void> _toggleFav() async {
     final s = context.read<SessionState>();
     if (!s.loggedIn) {
-      showToast(context, 'سجّل الدخول من "حسابي" لحفظ المفضلة');
+      showToast(context, tr('سجّل الدخول من "حسابي" لحفظ المفضلة', 'Sign in from "Account" to save favorites'));
       return;
     }
     try {
       final on = await s.toggleFavorite(widget.slug);
-      if (mounted) showToast(context, on ? 'أضيفت إلى المفضلة' : 'أزيلت من المفضلة');
+      if (mounted) showToast(context, on ? tr('أضيفت إلى المفضلة', 'Added to favorites') : tr('أزيلت من المفضلة', 'Removed from favorites'));
     } catch (e) {
       if (mounted) showToast(context, '$e');
     }
@@ -124,7 +125,7 @@ class _ItemScreenState extends State<ItemScreen> {
       cart.setDates(_days[_sel[0]].ymd, _days[_sel.length > 1 ? _sel[1] : _sel[0]].ymd);
     }
     cart.add(it, _qty);
-    showToast(context, '${it.name} أضيفت للطلب');
+    showToast(context, tr('${it.name} أضيفت للطلب', '${it.name} added to your order'));
   }
 
   @override
@@ -145,7 +146,7 @@ class _ItemScreenState extends State<ItemScreen> {
                 SliverToBoxAdapter(child: Reveal(delay: const Duration(milliseconds: 280), child: _calendar())),
                 SliverToBoxAdapter(child: Reveal(delay: const Duration(milliseconds: 340), child: _options())),
                 if (it.related.isNotEmpty) ...[
-                  const SliverToBoxAdapter(child: SectionHeader('من نفس القسم')),
+                  SliverToBoxAdapter(child: SectionHeader(tr('من نفس القسم', 'From the same category'))),
                   SliverToBoxAdapter(child: EquipmentRow(it.related, heroPrefix: 'rel-${widget.slug}')),
                 ],
                 const SliverToBoxAdapter(child: SizedBox(height: 130)),
@@ -177,12 +178,12 @@ class _ItemScreenState extends State<ItemScreen> {
           PositionedDirectional(
             top: 10,
             start: 20,
-            child: _circleBtn(Icons.arrow_back_rounded, 'رجوع', () => Navigator.of(context).maybePop()),
+            child: _circleBtn(Icons.arrow_back_rounded, tr('رجوع', 'Back'), () => Navigator.of(context).maybePop()),
           ),
           PositionedDirectional(
             top: 10,
             end: 20,
-            child: _circleBtn(fav ? Icons.favorite_rounded : Icons.favorite_border_rounded, 'المفضلة', _toggleFav, color: fav ? C.red : C.ink),
+            child: _circleBtn(fav ? Icons.favorite_rounded : Icons.favorite_border_rounded, tr('المفضلة', 'Favorites'), _toggleFav, color: fav ? C.red : C.ink),
           ),
           if (images.length > 1)
             Positioned(
@@ -238,13 +239,13 @@ class _ItemScreenState extends State<ItemScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${it.brand}${it.categoryAr.isNotEmpty ? ' · ${it.categoryAr}' : ''}', style: Txt.muted),
+          Text('${it.brand}${it.categoryName.isNotEmpty ? ' · ${it.categoryName}' : ''}', style: Txt.muted),
           const SizedBox(height: 4),
           SizedBox(
             width: double.infinity,
             child: Text(it.name,
                 textDirection: TextDirection.ltr,
-                textAlign: TextAlign.right,
+                textAlign: L.en ? TextAlign.left : TextAlign.right,
                 style: const TextStyle(fontSize: 27, fontWeight: FontWeight.w600, height: 1.2)),
           ),
           const SizedBox(height: 12),
@@ -255,7 +256,7 @@ class _ItemScreenState extends State<ItemScreen> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Container(width: 7, height: 7, decoration: BoxDecoration(color: ok ? C.ok : C.warn, shape: BoxShape.circle)),
                 const SizedBox(width: 6),
-                Text(ok ? 'متوفر اليوم $freeToday من ${it.qtyTotal}' : 'محجوز اليوم — اختر أياماً أخرى',
+                Text(ok ? tr('متوفر اليوم $freeToday من ${it.qtyTotal}', 'Available today: $freeToday of ${it.qtyTotal}') : tr('محجوز اليوم — اختر أياماً أخرى', 'Booked today — pick other days'),
                     style: TextStyle(fontSize: 12, color: ok ? C.ok : C.warn, fontWeight: FontWeight.w500)),
               ]),
             ),
@@ -301,9 +302,9 @@ class _ItemScreenState extends State<ItemScreen> {
 
   Widget _calendar() {
     final n = _selDays;
-    String label = 'اختر يوم الاستلام ثم الإرجاع';
+    String label = tr('اختر يوم الاستلام ثم الإرجاع', 'Pick a pickup day, then a return day');
     if (n > 0) {
-      label = '$n يوم · ${fmtDay(_days[_sel[0]].ymd)}${n > 1 ? ' ← ${fmtDay(_days[_sel[1]].ymd)}' : ''}';
+      label = tr('$n يوم · ${fmtDay(_days[_sel[0]].ymd)}${n > 1 ? ' ← ${fmtDay(_days[_sel[1]].ymd)}' : ''}', '$n ${n == 1 ? 'day' : 'days'} · ${fmtDay(_days[_sel[0]].ymd)}${n > 1 ? ' → ${fmtDay(_days[_sel[1]].ymd)}' : ''}');
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +312,7 @@ class _ItemScreenState extends State<ItemScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 30, 20, 14),
           child: Row(children: [
-            Text('أيام الحجز', style: Txt.section),
+            Text(tr('أيام الحجز', 'Booking days'), style: Txt.section),
             const Spacer(),
             Flexible(child: Text(label, style: Txt.muted, overflow: TextOverflow.ellipsis)),
           ]),
@@ -358,7 +359,7 @@ class _ItemScreenState extends State<ItemScreen> {
                                       color: fg,
                                       decoration: booked ? TextDecoration.lineThrough : null,
                                     )),
-                                Text(booked ? 'محجوز' : '${d.available} متاح',
+                                Text(booked ? tr('محجوز', 'Booked') : tr('${d.available} متاح', '${d.available} free'),
                                     style: TextStyle(fontSize: 9.5, color: sel ? C.inkMuted : C.muted)),
                               ],
                             ),
@@ -378,8 +379,8 @@ class _ItemScreenState extends State<ItemScreen> {
     return FormCard(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       children: [
-        ToggleRow(title: 'فني / مشغّل مع المعدة', subtitle: 'يُضاف إلى طلبك', value: cart.technician, onChanged: cart.setTechnician),
-        ToggleRow(title: 'توصيل إلى الموقع', subtitle: 'داخل بغداد', value: cart.delivery, onChanged: cart.setDelivery, divider: false),
+        ToggleRow(title: tr('فني / مشغّل مع المعدة', 'Technician / operator with the gear'), subtitle: tr('يُضاف إلى طلبك', 'Added to your order'), value: cart.technician, onChanged: cart.setTechnician),
+        ToggleRow(title: tr('توصيل إلى الموقع', 'Delivery to location'), subtitle: tr('داخل بغداد', 'Within Baghdad'), value: cart.delivery, onChanged: cart.setDelivery, divider: false),
       ],
     );
   }
@@ -399,7 +400,7 @@ class _ItemScreenState extends State<ItemScreen> {
             onInc: () {
               final m = _maxFree;
               if (_qty >= m) {
-                showToast(context, 'أقصى كمية متاحة: $m');
+                showToast(context, tr('أقصى كمية متاحة: $m', 'Max available quantity: $m'));
                 return;
               }
               setState(() => _qty++);
@@ -409,8 +410,8 @@ class _ItemScreenState extends State<ItemScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: AppButton(
-              inCart ? 'تحديث الطلب' : 'أضف للطلب',
-              trailing: n > 0 ? '· $n يوم' : null,
+              inCart ? tr('تحديث الطلب', 'Update order') : tr('أضف للطلب', 'Add to order'),
+              trailing: n > 0 ? tr('· $n يوم', '· $n ${n == 1 ? 'day' : 'days'}') : null,
               onPressed: it.qtyTotal > 0 ? _add : null,
             ),
           ),

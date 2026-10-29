@@ -15,6 +15,7 @@ import '../widgets/common.dart';
 import '../widgets/equipment_card.dart';
 import 'notifications_screen.dart';
 import 'track_screen.dart';
+import '../core/i18n.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -68,7 +69,7 @@ class _AuthViewState extends State<_AuthView> {
         await s.login(_email.text, _password.text);
       }
       _password.clear();
-      if (mounted) showToast(context, 'أهلاً ${s.user?.name ?? ''}');
+      if (mounted) showToast(context, tr('أهلاً ${s.user?.name ?? ''}', 'Welcome ${s.user?.name ?? ''}'));
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _errors = e.details);
@@ -85,12 +86,12 @@ class _AuthViewState extends State<_AuthView> {
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
-        Text(_register ? 'حساب جديد' : 'تسجيل الدخول', style: Txt.title),
+        Text(_register ? tr('حساب جديد', 'Sign up') : tr('تسجيل الدخول', 'Sign in'), style: Txt.title),
         const SizedBox(height: 6),
-        Text('الحساب اختياري — يمكنك التصفح وإرسال طلب بدون حساب. الحساب يحفظ طلباتك ومفضلتك.', style: Txt.muted),
+        Text(tr('الحساب اختياري — يمكنك التصفح وإرسال طلب بدون حساب. الحساب يحفظ طلباتك ومفضلتك.', 'An account is optional — you can browse and send a request without one. An account keeps your orders and favorites.'), style: Txt.muted),
         const SizedBox(height: 16),
         _Segmented(
-          labels: const ['دخول', 'حساب جديد'],
+          labels: [tr('دخول', 'Sign in'), tr('حساب جديد', 'Sign up')],
           index: _register ? 1 : 0,
           onChanged: (i) => setState(() {
             _register = i == 1;
@@ -101,13 +102,13 @@ class _AuthViewState extends State<_AuthView> {
         AutofillGroup(
           child: FormCard(children: [
             if (_register) ...[
-              LabeledField(label: 'الاسم', controller: _name, autofill: const [AutofillHints.name], error: err('name')),
-              LabeledField(label: 'رقم الهاتف', controller: _phone, keyboard: TextInputType.phone, ltr: true, autofill: const [AutofillHints.telephoneNumber], error: err('phone')),
-              LabeledField(label: 'الشركة (اختياري)', controller: _company, autofill: const [AutofillHints.organizationName], error: err('company')),
+              LabeledField(label: tr('الاسم', 'Name'), controller: _name, autofill: const [AutofillHints.name], error: err('name')),
+              LabeledField(label: tr('رقم الهاتف', 'Phone number'), controller: _phone, keyboard: TextInputType.phone, ltr: true, autofill: const [AutofillHints.telephoneNumber], error: err('phone')),
+              LabeledField(label: tr('الشركة (اختياري)', 'Company (optional)'), controller: _company, autofill: const [AutofillHints.organizationName], error: err('company')),
             ],
-            LabeledField(label: 'البريد الإلكتروني', controller: _email, keyboard: TextInputType.emailAddress, ltr: true, autofill: const [AutofillHints.email], error: err('email')),
+            LabeledField(label: tr('البريد الإلكتروني', 'Email'), controller: _email, keyboard: TextInputType.emailAddress, ltr: true, autofill: const [AutofillHints.email], error: err('email')),
             LabeledField(
-              label: 'كلمة المرور',
+              label: tr('كلمة المرور', 'Password'),
               controller: _password,
               obscure: true,
               ltr: true,
@@ -121,19 +122,19 @@ class _AuthViewState extends State<_AuthView> {
         if (_register)
           Padding(
             padding: EdgeInsets.only(top: 8),
-            child: Text('8 أحرف على الأقل وتحتوي حروفاً وأرقاماً.', style: Txt.small),
+            child: Text(tr('8 أحرف على الأقل وتحتوي حروفاً وأرقاماً.', 'At least 8 characters, with letters and numbers.'), style: Txt.small),
           ),
         const SizedBox(height: 16),
-        AppButton(_register ? 'إنشاء الحساب' : 'دخول', loading: _busy, onPressed: _submit),
+        AppButton(_register ? tr('إنشاء الحساب', 'Create account') : tr('دخول', 'Sign in'), loading: _busy, onPressed: _submit),
         if (_register)
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Text.rich(
               TextSpan(children: [
-                const TextSpan(text: 'بإنشاء حساب فإنك توافق على '),
-                WidgetSpan(child: _LinkText('شروط الاستخدام', AppConfig.termsUrl)),
-                const TextSpan(text: ' و'),
-                WidgetSpan(child: _LinkText('سياسة الخصوصية', AppConfig.privacyUrl)),
+                TextSpan(text: tr('بإنشاء حساب فإنك توافق على ', 'By creating an account you agree to the ')),
+                WidgetSpan(child: _LinkText(tr('شروط الاستخدام', 'Terms of Use'), AppConfig.termsUrl)),
+                TextSpan(text: tr(' و', ' and ')),
+                WidgetSpan(child: _LinkText(tr('سياسة الخصوصية', 'Privacy Policy'), AppConfig.privacyUrl)),
               ]),
               style: Txt.small,
               textAlign: TextAlign.center,
@@ -141,7 +142,7 @@ class _AuthViewState extends State<_AuthView> {
           ),
         const SizedBox(height: 26),
         _MenuCard(items: [
-          _MenuItem(Icons.local_shipping_outlined, 'تتبع طلب برقم الطلب', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TrackScreen()))),
+          _MenuItem(Icons.local_shipping_outlined, tr('تتبع طلب برقم الطلب', 'Track an order by number'), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TrackScreen()))),
         ]),
         const SizedBox(height: 12),
         const _InfoSection(),
@@ -169,7 +170,7 @@ class _ProfileState extends State<_Profile> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
       children: [
-        Text('حسابي', style: Txt.title),
+        Text(tr('حسابي', 'Account'), style: Txt.title),
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(18),
@@ -195,12 +196,12 @@ class _ProfileState extends State<_Profile> {
                 side: BorderSide(color: C.inkLine),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('خروج', style: TextStyle(fontSize: 12.5)),
+              child: Text(tr('خروج', 'Sign out'), style: TextStyle(fontSize: 12.5)),
             ),
           ]),
         ),
         const SizedBox(height: 14),
-        _Segmented(labels: const ['طلباتي', 'المفضلة', 'الحساب'], index: _tab, onChanged: (i) => setState(() => _tab = i)),
+        _Segmented(labels: [tr('طلباتي', 'My orders'), tr('المفضلة', 'Favorites'), tr('الحساب', 'Profile')], index: _tab, onChanged: (i) => setState(() => _tab = i)),
         const SizedBox(height: 14),
         if (_tab == 0) _OrdersList(key: ValueKey('orders$_reload'), onChanged: () => setState(() => _reload++)),
         if (_tab == 1) const _Favorites(),
@@ -244,9 +245,9 @@ class _OrdersListState extends State<_OrdersList> {
         if (snap.data!.isEmpty) {
           return EmptyState(
             icon: Icons.receipt_long_outlined,
-            title: 'لا توجد طلبات بعد',
-            message: 'طلباتك وعروض الأسعار ستظهر هنا.',
-            action: 'تصفّح المعدات',
+            title: tr('لا توجد طلبات بعد', 'No orders yet'),
+            message: tr('طلباتك وعروض الأسعار ستظهر هنا.', 'Your orders and quotes will appear here.'),
+            action: tr('تصفّح المعدات', 'Browse gear'),
             onAction: () => context.read<AppState>().openBrowse(),
           );
         }
@@ -269,17 +270,17 @@ class OrderCard extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (d) => AlertDialog(
-        title: const Text('إلغاء هذا الطلب؟'),
+        title: Text(tr('إلغاء هذا الطلب؟', 'Cancel this order?')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('رجوع')),
-          TextButton(onPressed: () => Navigator.pop(d, true), child: Text('إلغاء الطلب', style: TextStyle(color: C.red))),
+          TextButton(onPressed: () => Navigator.pop(d, false), child: Text(tr('رجوع', 'Back'))),
+          TextButton(onPressed: () => Navigator.pop(d, true), child: Text(tr('إلغاء الطلب', 'Cancel order'), style: TextStyle(color: C.red))),
         ],
       ),
     );
     if (ok != true || !context.mounted) return;
     try {
       await context.read<ApiClient>().post('/me/orders/${order.ref}/cancel');
-      if (context.mounted) showToast(context, 'تم إلغاء الطلب');
+      if (context.mounted) showToast(context, tr('تم إلغاء الطلب', 'Order cancelled'));
       onCancelled?.call();
     } catch (e) {
       if (context.mounted) showToast(context, '$e');
@@ -311,18 +312,18 @@ class OrderCard extends StatelessWidget {
               children: [
                 Row(children: [
                   Expanded(
-                    child: Text(order.project ?? 'طلب ${order.ref}',
+                    child: Text(order.project ?? tr('طلب ${order.ref}', 'Order ${order.ref}'),
                         maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                   ),
                   StatusChip(order.status),
                 ]),
                 const SizedBox(height: 4),
-                Text('${order.ref} · ${fmtDay(order.startDate)} – ${fmtDay(order.endDate)} · ${order.units} قطعة', style: Txt.small),
+                Text(tr('${order.ref} · ${fmtDay(order.startDate)} – ${fmtDay(order.endDate)} · ${order.units} قطعة', '${order.ref} · ${fmtDay(order.startDate)} – ${fmtDay(order.endDate)} · ${order.units} pcs'), style: Txt.small),
                 if (order.quoteAmount != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text.rich(TextSpan(children: [
-                      const TextSpan(text: 'عرض السعر: '),
+                      TextSpan(text: tr('عرض السعر: ', 'Quote: ')),
                       TextSpan(text: '${fmtNumber(order.quoteAmount!)} $currency', style: TextStyle(color: C.ink, fontWeight: FontWeight.w600)),
                     ]), style: Txt.small),
                   ),
@@ -342,7 +343,7 @@ class OrderCard extends StatelessWidget {
                     child: TextButton(
                       onPressed: () => _cancel(context),
                       style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 34)),
-                      child: Text('إلغاء الطلب', style: TextStyle(color: C.muted, fontSize: 12)),
+                      child: Text(tr('إلغاء الطلب', 'Cancel order'), style: TextStyle(color: C.muted, fontSize: 12)),
                     ),
                   ),
               ],
@@ -386,7 +387,7 @@ class _FavoritesState extends State<_Favorites> {
         if (!snap.hasData) return const Skeleton(height: 200);
         final items = snap.data!;
         if (items.isEmpty) {
-          return const EmptyState(icon: Icons.favorite_border_rounded, title: 'لا توجد مفضلة', message: 'اضغط ♡ في صفحة أي معدة لحفظها هنا.');
+          return EmptyState(icon: Icons.favorite_border_rounded, title: tr('لا توجد مفضلة', 'No favorites yet'), message: tr('اضغط ♡ في صفحة أي معدة لحفظها هنا.', 'Tap ♡ on any item to save it here.'));
         }
         return GridView.builder(
           shrinkWrap: true,
@@ -439,7 +440,7 @@ class _SettingsState extends State<_Settings> {
     });
     try {
       await context.read<SessionState>().updateProfile({'name': _name.text.trim(), 'phone': _phone.text.trim(), 'company': _company.text.trim()});
-      if (mounted) showToast(context, 'تم الحفظ');
+      if (mounted) showToast(context, tr('تم الحفظ', 'Saved'));
     } on ApiException catch (e) {
       if (mounted) {
         setState(() => _errors = e.details);
@@ -459,7 +460,7 @@ class _SettingsState extends State<_Settings> {
       await context.read<SessionState>().changePassword(_current.text, _next.text);
       _current.clear();
       _next.clear();
-      if (mounted) showToast(context, 'تم تغيير كلمة المرور');
+      if (mounted) showToast(context, tr('تم تغيير كلمة المرور', 'Password changed'));
     } on ApiException catch (e) {
       if (mounted) {
         setState(() => _errors = e.details);
@@ -476,13 +477,13 @@ class _SettingsState extends State<_Settings> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (d) => AlertDialog(
-        title: const Text('حذف الحساب نهائياً'),
+        title: Text(tr('حذف الحساب نهائياً', 'Delete account permanently')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'سيتم حذف بيانات حسابك (الاسم، البريد، الهاتف، الشركة) والمفضلة فوراً، ولا يمكن التراجع. سجلات الطلبات السابقة تبقى لدى الشركة كسجل تجاري بدون ربطها بحسابك.',
+            Text(
+              tr('سيتم حذف بيانات حسابك (الاسم، البريد، الهاتف، الشركة) والمفضلة فوراً، ولا يمكن التراجع. سجلات الطلبات السابقة تبقى لدى الشركة كسجل تجاري بدون ربطها بحسابك.', "Your account data (name, email, phone, company) and favorites will be deleted immediately. This can't be undone. Past order records stay with the company as business records, no longer linked to your account."),
               style: TextStyle(fontSize: 13.5, height: 1.7),
             ),
             const SizedBox(height: 14),
@@ -490,13 +491,13 @@ class _SettingsState extends State<_Settings> {
               controller: pw,
               obscureText: true,
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'كلمة المرور للتأكيد', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: tr('كلمة المرور للتأكيد', 'Password to confirm'), border: OutlineInputBorder()),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('إلغاء')),
-          TextButton(onPressed: () => Navigator.pop(d, true), child: Text('حذف الحساب', style: TextStyle(color: C.red))),
+          TextButton(onPressed: () => Navigator.pop(d, false), child: Text(tr('إلغاء', 'Cancel'))),
+          TextButton(onPressed: () => Navigator.pop(d, true), child: Text(tr('حذف الحساب', 'Delete account'), style: TextStyle(color: C.red))),
         ],
       ),
     );
@@ -504,7 +505,7 @@ class _SettingsState extends State<_Settings> {
     if (confirmed != true || !mounted) return;
     try {
       await context.read<SessionState>().deleteAccount(password);
-      if (mounted) showToast(context, 'تم حذف حسابك نهائياً');
+      if (mounted) showToast(context, tr('تم حذف حسابك نهائياً', 'Your account has been deleted'));
     } catch (e) {
       if (mounted) showToast(context, '$e');
     }
@@ -517,24 +518,24 @@ class _SettingsState extends State<_Settings> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FormCard(children: [
-          LabeledField(label: 'الاسم', controller: _name, error: err('name')),
-          LabeledField(label: 'الهاتف', controller: _phone, keyboard: TextInputType.phone, ltr: true, error: err('phone')),
-          LabeledField(label: 'الشركة', controller: _company, last: true, error: err('company')),
+          LabeledField(label: tr('الاسم', 'Name'), controller: _name, error: err('name')),
+          LabeledField(label: tr('الهاتف', 'Phone'), controller: _phone, keyboard: TextInputType.phone, ltr: true, error: err('phone')),
+          LabeledField(label: tr('الشركة', 'Company'), controller: _company, last: true, error: err('company')),
         ]),
         const SizedBox(height: 12),
-        AppButton('حفظ', loading: _savingProfile, onPressed: _saveProfile),
-        const SectionHeader('تغيير كلمة المرور', padding: EdgeInsets.only(top: 28, bottom: 12)),
+        AppButton(tr('حفظ', 'Save'), loading: _savingProfile, onPressed: _saveProfile),
+        SectionHeader(tr('تغيير كلمة المرور', 'Change password'), padding: EdgeInsets.only(top: 28, bottom: 12)),
         FormCard(children: [
-          LabeledField(label: 'كلمة المرور الحالية', controller: _current, obscure: true, ltr: true, error: err('current')),
-          LabeledField(label: 'كلمة المرور الجديدة', controller: _next, obscure: true, ltr: true, last: true, error: err('new')),
+          LabeledField(label: tr('كلمة المرور الحالية', 'Current password'), controller: _current, obscure: true, ltr: true, error: err('current')),
+          LabeledField(label: tr('كلمة المرور الجديدة', 'New password'), controller: _next, obscure: true, ltr: true, last: true, error: err('new')),
         ]),
         const SizedBox(height: 12),
-        AppButton.light('تغيير كلمة المرور', loading: _savingPw, onPressed: _savePassword),
+        AppButton.light(tr('تغيير كلمة المرور', 'Change password'), loading: _savingPw, onPressed: _savePassword),
         const SizedBox(height: 26),
         const _InfoSection(),
         const SizedBox(height: 12),
         _MenuCard(items: [
-          _MenuItem(Icons.delete_outline_rounded, 'حذف الحساب', _deleteAccount, color: C.red),
+          _MenuItem(Icons.delete_outline_rounded, tr('حذف الحساب', 'Delete account'), _deleteAccount, color: C.red),
         ]),
       ],
     );
@@ -556,12 +557,14 @@ class _InfoSection extends StatelessWidget {
       children: [
         const _AppearanceCard(),
         const SizedBox(height: 12),
+        const _LanguageCard(),
+        const SizedBox(height: 12),
         if (PushService.available) ...[
           PromoToggle(read: PushService.promoConsent, write: (v) async => PushService.instance?.setPromo(v)),
           const SizedBox(height: 12),
         ],
         _MenuCard(items: [
-          _MenuItem(Icons.notifications_none_rounded, unread > 0 ? 'الإشعارات ($unread جديد)' : 'الإشعارات',
+          _MenuItem(Icons.notifications_none_rounded, unread > 0 ? tr('الإشعارات ($unread جديد)', 'Notifications ($unread new)') : tr('الإشعارات', 'Notifications'),
               () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
         ]),
         const SizedBox(height: 12),
@@ -571,7 +574,7 @@ class _InfoSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('قسم التأجير', style: TextStyle(color: C.onInk, fontSize: 17, fontWeight: FontWeight.w600)),
+              Text(tr('قسم التأجير', 'Rental desk'), style: TextStyle(color: C.onInk, fontSize: 17, fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
               if ((app.settings['address'] ?? '').isNotEmpty)
                 Text(app.settings['address']!, style: TextStyle(color: C.inkMuted, fontSize: 12.5, height: 1.8)),
@@ -579,12 +582,12 @@ class _InfoSection extends StatelessWidget {
               const SizedBox(height: 14),
               Row(children: [
                 Expanded(
-                  child: AppButton('واتساب',
-                      color: C.onInk, fg: C.ink, height: 44, onPressed: () => openLink(context, whatsappUrl(app.whatsapp, 'مرحباً Ghani Group'))),
+                  child: AppButton(tr('واتساب', 'WhatsApp'),
+                      color: C.onInk, fg: C.ink, height: 44, onPressed: () => openLink(context, whatsappUrl(app.whatsapp, tr('مرحباً Ghani Group', 'Hello Ghani Group')))),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: AppButton('اتصال',
+                  child: AppButton(tr('اتصال', 'Call'),
                       color: C.ink2, height: 44, onPressed: () => openLink(context, 'tel:${app.phone.replaceAll(RegExp(r'[^0-9+]'), '')}')),
                 ),
               ]),
@@ -593,13 +596,13 @@ class _InfoSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _MenuCard(items: [
-          _MenuItem(Icons.privacy_tip_outlined, 'سياسة الخصوصية', () => openLink(context, AppConfig.privacyUrl, inApp: true)),
-          _MenuItem(Icons.description_outlined, 'شروط الاستخدام', () => openLink(context, AppConfig.termsUrl, inApp: true)),
-          _MenuItem(Icons.support_agent_rounded, 'الدعم', () => openLink(context, AppConfig.supportUrl, inApp: true)),
+          _MenuItem(Icons.privacy_tip_outlined, tr('سياسة الخصوصية', 'Privacy Policy'), () => openLink(context, AppConfig.privacyUrl, inApp: true)),
+          _MenuItem(Icons.description_outlined, tr('شروط الاستخدام', 'Terms of Use'), () => openLink(context, AppConfig.termsUrl, inApp: true)),
+          _MenuItem(Icons.support_agent_rounded, tr('الدعم', 'Support'), () => openLink(context, AppConfig.supportUrl, inApp: true)),
         ]),
         Padding(
           padding: const EdgeInsets.only(top: 14),
-          child: Text('Ghani Group · الإصدار ${app.version} (${app.build})', textAlign: TextAlign.center, style: Txt.small),
+          child: Text(tr('Ghani Group · الإصدار ${app.version} (${app.build})', 'Ghani Group · Version ${app.version} (${app.build})'), textAlign: TextAlign.center, style: Txt.small),
         ),
       ],
     );
@@ -684,10 +687,10 @@ class _AppearanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.watch<ThemeState>();
-    const opts = [
-      (AppThemeMode.system, Icons.brightness_auto_rounded, 'تلقائي'),
-      (AppThemeMode.light, Icons.light_mode_rounded, 'فاتح'),
-      (AppThemeMode.dark, Icons.dark_mode_rounded, 'داكن'),
+    final opts = [
+      (AppThemeMode.system, Icons.brightness_auto_rounded, tr('تلقائي', 'Auto')),
+      (AppThemeMode.light, Icons.light_mode_rounded, tr('فاتح', 'Light')),
+      (AppThemeMode.dark, Icons.dark_mode_rounded, tr('داكن', 'Dark')),
     ];
     return Container(
       padding: const EdgeInsets.all(16),
@@ -695,7 +698,7 @@ class _AppearanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('المظهر', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600)),
+          Text(tr('المظهر', 'Appearance'), style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -732,6 +735,60 @@ class _AppearanceCard extends StatelessWidget {
                         ),
                       );
                     }),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// اللغة: تلقائي (حسب لغة الجهاز) / العربية / English
+class _LanguageCard extends StatelessWidget {
+  const _LanguageCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.watch<LangState>();
+    final opts = [
+      (AppLang.system, Icons.language_rounded, tr('تلقائي', 'Auto')),
+      (AppLang.ar, Icons.translate_rounded, 'العربية'),
+      (AppLang.en, Icons.translate_rounded, 'English'),
+    ];
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(22)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(tr('اللغة', 'Language'), style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              for (final o in opts)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Pressable(
+                      scale: .94,
+                      onTap: () => l.set(o.$1),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOutCubic,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: l.lang == o.$1 ? C.ink : C.bg,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(children: [
+                          Icon(o.$2, size: 22, color: l.lang == o.$1 ? C.onInk : C.muted),
+                          const SizedBox(height: 6),
+                          Text(o.$3, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: l.lang == o.$1 ? C.onInk : C.ink)),
+                        ]),
+                      ),
+                    ),
                   ),
                 ),
             ],

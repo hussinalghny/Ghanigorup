@@ -5,6 +5,7 @@ import '../core/theme.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
 import 'shell.dart';
+import '../core/i18n.dart';
 
 /// شاشة الإقلاع: تحميل الإعدادات + فحص التحديث الإجباري ووضع الصيانة
 class StartupGate extends StatefulWidget {
@@ -61,34 +62,41 @@ class _StartupGateState extends State<StartupGate> {
   }
 }
 
-/// نفس شاشة البداية الأصلية (لون الهوية + الشعار) حتى لا يحدث وميض
+/// نفس شاشة البداية الأصلية (لون الشعار + الشعار بنفس الحجم والمكان) حتى لا يحدث وميض
 class _BrandSplash extends StatelessWidget {
   const _BrandSplash({super.key});
 
+  static const bg = Color(0xFFEF2B4B);
+
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: C.brand,
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // نفس حجم شاشة البداية الأصلية ثم "نبضة" خفيفة
-              TweenAnimationBuilder<double>(
+        backgroundColor: bg,
+        body: Stack(
+          children: [
+            Center(
+              // نفس حجم الشعار في شاشة البداية الأصلية (220) ثم "نبضة" خفيفة
+              child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 900),
                 curve: Curves.easeOutBack,
-                builder: (_, v, child) => Transform.scale(scale: .94 + .06 * v, child: child),
-                child: Image.asset('assets/images/logo_full.png', width: 220),
+                builder: (_, v, child) => Transform.scale(scale: .96 + .04 * v, child: child),
+                child: Image.asset('assets/images/logo_full.png', width: 220, filterQuality: FilterQuality.high),
               ),
-              const SizedBox(height: 40),
-              TweenAnimationBuilder<double>(
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: MediaQuery.paddingOf(context).bottom + 48,
+              child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 600),
                 builder: (_, v, child) => Opacity(opacity: v, child: child),
-                child: const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                child: const Center(
+                  child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
 }
@@ -101,16 +109,16 @@ class _GateScreen extends StatelessWidget {
   const _GateScreen({required this.title, required this.message, required this.button, this.onPressed, this.url});
 
   factory _GateScreen.update({required String storeUrl}) => _GateScreen(
-        title: 'يتوفر إصدار جديد',
-        message: 'حدّث التطبيق للاستمرار — الإصدار الحالي لم يعد مدعوماً.',
-        button: 'تحديث الآن',
+        title: tr('يتوفر إصدار جديد', 'A new version is available'),
+        message: tr('حدّث التطبيق للاستمرار — الإصدار الحالي لم يعد مدعوماً.', 'Update the app to continue — this version is no longer supported.'),
+        button: tr('تحديث الآن', 'Update now'),
         url: storeUrl,
       );
 
   factory _GateScreen.maintenance({required String message, required VoidCallback onRetry}) => _GateScreen(
-        title: 'صيانة مؤقتة',
+        title: tr('صيانة مؤقتة', 'Temporary maintenance'),
         message: message,
-        button: 'إعادة المحاولة',
+        button: tr('إعادة المحاولة', 'Try again'),
         onPressed: onRetry,
       );
 

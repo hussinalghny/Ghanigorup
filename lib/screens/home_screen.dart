@@ -15,6 +15,7 @@ import '../widgets/equipment_card.dart';
 import '../widgets/links.dart';
 import 'kits_screen.dart';
 import 'notifications_screen.dart';
+import '../core/i18n.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -119,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const Spacer(),
               Builder(builder: (btnCtx) {
                 return _RoundIcon(
-                  tooltip: theme.isDark ? 'الوضع الفاتح' : 'الوضع الداكن',
+                  tooltip: theme.isDark ? tr('الوضع الفاتح', 'Light mode') : tr('الوضع الداكن', 'Dark mode'),
                   icon: theme.isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                   onTap: () {
                     final box = btnCtx.findRenderObject() as RenderBox?;
@@ -130,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
               }),
               const SizedBox(width: 8),
               _RoundIcon(
-                tooltip: 'الإشعارات',
+                tooltip: tr('الإشعارات', 'Notifications'),
                 icon: unread > 0 ? Icons.notifications_rounded : Icons.notifications_none_rounded,
                 badge: unread,
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
@@ -155,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
             index: 1,
             child: Semantics(
               button: true,
-              label: 'بحث',
+              label: tr('بحث', 'Search'),
               child: Pressable(
                 scale: .98,
                 onTap: () => context.read<AppState>().openBrowse(focus: true),
@@ -167,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Icon(Icons.search_rounded, color: C.muted, size: 21),
                       const SizedBox(width: 10),
-                      Expanded(child: Text('ابحث عن كاميرا، عدسة، إضاءة…', style: TextStyle(color: C.muted, fontSize: 14))),
+                      Expanded(child: Text(tr('ابحث عن كاميرا، عدسة، إضاءة…', 'Search cameras, lenses, lights…'), style: TextStyle(color: C.muted, fontSize: 14))),
                       Container(
                         width: 40,
                         height: 40,
@@ -208,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Reveal(index: 2, child: d.banners.isEmpty ? Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: kitsCard) : _BannerCarousel(d.banners)),
         ),
       ),
-      SliverToBoxAdapter(child: SectionHeader('الأقسام', action: 'عرض الكل', onAction: () => app.openBrowse())),
+      SliverToBoxAdapter(child: SectionHeader(tr('الأقسام', 'Categories'), action: tr('عرض الكل', 'See all'), onAction: () => app.openBrowse())),
       SliverToBoxAdapter(
         child: SizedBox(
           height: 126,
@@ -237,8 +238,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: NetImage(c.image),
                         ),
                         const SizedBox(height: 7),
-                        Text(c.nameAr, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                        Text('${c.count} معدة', style: TextStyle(fontSize: 10.5, color: C.muted)),
+                        Text(c.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                        Text(tr('${c.count} معدة', '${c.count} items'), style: TextStyle(fontSize: 10.5, color: C.muted)),
                       ],
                     ),
                   ),
@@ -249,18 +250,18 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       if (d.brands.isNotEmpty) ...[
-        SliverToBoxAdapter(child: SectionHeader('الماركات', action: 'الكل', onAction: () => app.openBrowse())),
+        SliverToBoxAdapter(child: SectionHeader(tr('الماركات', 'Brands'), action: tr('الكل', 'All'), onAction: () => app.openBrowse())),
         SliverToBoxAdapter(child: _BrandsRow(d.brands)),
       ],
       if (d.banners.isNotEmpty)
         SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(20, 24, 20, 0), child: Reveal(child: kitsCard))),
       if (d.featured.isNotEmpty) ...[
-        SliverToBoxAdapter(child: SectionHeader('الأكثر طلباً', action: 'عرض الكل', onAction: () => app.openBrowse())),
+        SliverToBoxAdapter(child: SectionHeader(tr('الأكثر طلباً', 'Most requested'), action: tr('عرض الكل', 'See all'), onAction: () => app.openBrowse())),
         EquipmentSliverGrid(d.featured, heroPrefix: 'feat'),
       ],
       if (d.kits.isNotEmpty) ...[
         SliverToBoxAdapter(
-          child: SectionHeader('باقات جاهزة', action: 'كل الباقات', onAction: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const KitsScreen()))),
+          child: SectionHeader(tr('باقات جاهزة', 'Ready kits'), action: tr('كل الباقات', 'All kits'), onAction: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const KitsScreen()))),
         ),
         SliverToBoxAdapter(
           child: SizedBox(
@@ -277,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
       if (d.fresh.isNotEmpty) ...[
-        SliverToBoxAdapter(child: SectionHeader('وصل حديثاً', action: 'الإضاءة', onAction: () => app.openBrowse(category: 'light'))),
+        SliverToBoxAdapter(child: SectionHeader(tr('وصل حديثاً', 'New arrivals'), action: tr('الإضاءة', 'Lighting'), onAction: () => app.openBrowse(category: 'light'))),
         EquipmentSliverGrid(d.fresh, heroPrefix: 'new'),
       ],
     ];
@@ -520,7 +521,7 @@ class _BrandsRow extends StatelessWidget {
                             ),
                     ),
                     const SizedBox(height: 6),
-                    Text('${b.count} معدة', style: Txt.small),
+                    Text(tr('${b.count} معدة', '${b.count} items'), style: Txt.small),
                   ],
                 ),
               ),
@@ -568,14 +569,14 @@ class _KitsHero extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text('GHANI GROUP · FILM PRODUCTION', style: TextStyle(color: Colors.white70, fontSize: 10.5, letterSpacing: .5)),
                           SizedBox(height: 4),
-                          Text('أسطول وطاقم فني\nمن التحضير حتى التسليم', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w600, height: 1.4)),
+                          Text(tr('أسطول وطاقم فني\nمن التحضير حتى التسليم', 'Fleet and crew\nfrom prep to wrap'), style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w600, height: 1.4)),
                         ],
                       ),
                     ),
@@ -618,9 +619,9 @@ class KitCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(kit.nameAr, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(kit.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                Text('${kit.items.length} قطع · ${kit.nameEn}', style: Txt.small, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(tr('${kit.items.length} قطع · ${kit.nameEn}', '${kit.items.length} pcs'), style: Txt.small, maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 10),
                 Pressable(
                   scale: .92,
@@ -630,7 +631,7 @@ class KitCard extends StatelessWidget {
                     for (final e in kit.items) {
                       if (!c.has(e.slug)) c.add(e, e.kitQty);
                     }
-                    showToast(context, '${kit.nameAr} أضيفت للطلب');
+                    showToast(context, tr('${kit.nameAr} أضيفت للطلب', '${kit.name} added to your order'));
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 280),
@@ -638,7 +639,7 @@ class KitCard extends StatelessWidget {
                     decoration: BoxDecoration(color: added ? C.soft : C.ink, borderRadius: BorderRadius.circular(20)),
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 220),
-                      child: Text(added ? 'مضافة ✓' : 'أضف الباقة',
+                      child: Text(added ? tr('مضافة ✓', 'Added ✓') : tr('أضف الباقة', 'Add kit'),
                           key: ValueKey(added), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: added ? C.ink : C.onInk)),
                     ),
                   ),

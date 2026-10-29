@@ -9,6 +9,7 @@ import '../core/theme.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
 import '../widgets/equipment_card.dart';
+import '../core/i18n.dart';
 
 class BrowseScreen extends StatefulWidget {
   const BrowseScreen({super.key});
@@ -31,7 +32,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   Object? _error;
   final List<Equipment> _items = [];
 
-  static const _sorts = {'default': 'الأبرز', 'name': 'الاسم', 'brand': 'الماركة', 'newest': 'الأحدث'};
+  static Map<String, String> get _sorts => {'default': tr('الأبرز', 'Featured'), 'name': tr('الاسم', 'Name'), 'brand': tr('الماركة', 'Brand'), 'newest': tr('الأحدث', 'Newest')};
 
   @override
   void initState() {
@@ -129,7 +130,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('تصفّح المعدات', style: Txt.title),
+                    Text(tr('تصفّح المعدات', 'Browse gear'), style: Txt.title),
                     const SizedBox(height: 14),
                     Container(
                       height: 54,
@@ -146,7 +147,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                               textInputAction: TextInputAction.search,
                               decoration: InputDecoration(
                                 border: InputBorder.none,
-                                hintText: 'ALEXA، SkyPanel، Dolly…',
+                                hintText: tr('ALEXA، SkyPanel، Dolly…', 'ALEXA, SkyPanel, Dolly…'),
                                 hintStyle: TextStyle(color: C.muted, fontSize: 14),
                                 isDense: true,
                               ),
@@ -159,7 +160,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                           ),
                           if (_search.text.isNotEmpty)
                             IconButton(
-                              tooltip: 'مسح',
+                              tooltip: tr('مسح', 'Clear'),
                               icon: Icon(Icons.close_rounded, size: 18, color: C.muted),
                               onPressed: () {
                                 _search.clear();
@@ -180,8 +181,8 @@ class _BrowseScreenState extends State<BrowseScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                   children: [
-                    _pill('', 'الكل', total),
-                    for (final c in cats) _pill(c.slug, c.nameAr, c.count),
+                    _pill('', tr('الكل', 'All'), total),
+                    for (final c in cats) _pill(c.slug, c.name, c.count),
                   ],
                 ),
               ),
@@ -195,7 +196,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                       child: Row(children: [
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 250),
-                          child: Text(_loading && _items.isEmpty ? '' : '$_total معدة', key: ValueKey('$_total$_loading'), style: Txt.muted),
+                          child: Text(_loading && _items.isEmpty ? '' : tr('$_total معدة', '$_total items'), key: ValueKey('$_total$_loading'), style: Txt.muted),
                         ),
                         if (_brand.isNotEmpty) ...[
                           const SizedBox(width: 8),
@@ -226,7 +227,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                     ),
                     PopupMenuButton<String>(
                       initialValue: _sort,
-                      tooltip: 'الترتيب',
+                      tooltip: tr('الترتيب', 'Sort'),
                       onSelected: (v) {
                         _sort = v;
                         _load(reset: true);
@@ -257,8 +258,8 @@ class _BrowseScreenState extends State<BrowseScreen> {
                 ),
               )
             else if (_items.isEmpty)
-              const SliverToBoxAdapter(
-                child: EmptyState(icon: Icons.search_off_rounded, title: 'لا توجد نتائج', message: 'جرّب كلمة بحث أخرى أو قسماً آخر.'),
+              SliverToBoxAdapter(
+                child: EmptyState(icon: Icons.search_off_rounded, title: tr('لا توجد نتائج', 'No results'), message: tr('جرّب كلمة بحث أخرى أو قسماً آخر.', 'Try another search term or category.')),
               )
             else
               EquipmentSliverGrid(_items),

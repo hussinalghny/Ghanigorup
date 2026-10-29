@@ -21,6 +21,7 @@ import 'account_screen.dart';
 import 'browse_screen.dart';
 import 'home_screen.dart';
 import 'order_screen.dart';
+import '../core/i18n.dart';
 
 /// الهيكل الرئيسي: 4 تبويبات + شريط سفلي بأسلوب التصميم المعتمد
 class Shell extends StatefulWidget {
@@ -31,11 +32,11 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
-  static const _tabs = [
-    (Icons.home_outlined, Icons.home_rounded, 'الرئيسية'),
-    (Icons.grid_view_outlined, Icons.grid_view_rounded, 'تصفّح'),
-    (Icons.shopping_bag_outlined, Icons.shopping_bag_rounded, 'الطلب'),
-    (Icons.person_outline_rounded, Icons.person_rounded, 'حسابي'),
+  static List<(IconData, IconData, String)> get _tabs => [
+    (Icons.home_outlined, Icons.home_rounded, tr('الرئيسية', 'Home')),
+    (Icons.grid_view_outlined, Icons.grid_view_rounded, tr('تصفّح', 'Browse')),
+    (Icons.shopping_bag_outlined, Icons.shopping_bag_rounded, tr('الطلب', 'Order')),
+    (Icons.person_outline_rounded, Icons.person_rounded, tr('حسابي', 'Account')),
   ];
 
   StreamSubscription<AppNotification>? _sub;

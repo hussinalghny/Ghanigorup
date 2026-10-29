@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import 'common.dart';
+import '../core/i18n.dart';
 
 /// يعرض رسالة الترحيب حسب إعداد التكرار (مرة واحدة / يومياً / كل فتح)
 Future<void> maybeShowWelcome(BuildContext context, WelcomeMessage? w) async {
@@ -24,7 +25,7 @@ Future<void> maybeShowWelcome(BuildContext context, WelcomeMessage? w) async {
   await showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
-    barrierLabel: 'إغلاق',
+    barrierLabel: tr('إغلاق', 'Close'),
     barrierColor: Colors.black.withAlpha(110),
     transitionDuration: const Duration(milliseconds: 480),
     pageBuilder: (ctx, _, __) => _WelcomeCard(w),
@@ -97,7 +98,7 @@ class _WelcomeCard extends StatelessWidget {
         color: onImage ? Colors.black.withAlpha(90) : C.soft,
         shape: const CircleBorder(),
         child: IconButton(
-          tooltip: 'إغلاق',
+          tooltip: tr('إغلاق', 'Close'),
           visualDensity: VisualDensity.compact,
           onPressed: () => Navigator.of(context).pop(),
           icon: Icon(Icons.close_rounded, size: 18, color: onImage ? Colors.white : C.ink),

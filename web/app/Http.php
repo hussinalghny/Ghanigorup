@@ -148,6 +148,10 @@ final class Response
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
         header('Cache-Control: no-store');
+        if (I18n::wantsEn()) {
+            $message = I18n::t($message);
+            $details = I18n::details($details);
+        }
         $e = ['code' => $code, 'message' => $message];
         if ($details) $e['details'] = $details;
         echo json_encode(['ok' => false, 'error' => $e], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

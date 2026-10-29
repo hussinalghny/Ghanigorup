@@ -6,6 +6,7 @@ import '../core/theme.dart';
 import '../state/notifications.dart';
 import '../widgets/common.dart';
 import '../widgets/links.dart';
+import '../core/i18n.dart';
 
 /// صندوق الإشعارات: العروض وتحديثات الطلبات
 class NotificationsScreen extends StatefulWidget {
@@ -33,7 +34,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     final n = context.watch<NotificationsState>();
     return Scaffold(
-      appBar: AppBar(title: const Text('الإشعارات', style: TextStyle(fontWeight: FontWeight.w600))),
+      appBar: AppBar(title: Text(tr('الإشعارات', 'Notifications'), style: TextStyle(fontWeight: FontWeight.w600))),
       body: RefreshIndicator(
         color: C.ink,
         onRefresh: n.refresh,
@@ -42,8 +43,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Reveal(
                   child: EmptyState(
                     icon: Icons.notifications_none_rounded,
-                    title: n.loading ? 'جاري التحميل…' : 'لا توجد إشعارات',
-                    message: 'العروض الجديدة وتحديثات طلباتك ستظهر هنا.',
+                    title: n.loading ? tr('جاري التحميل…', 'Loading…') : tr('لا توجد إشعارات', 'No notifications'),
+                    message: tr('العروض الجديدة وتحديثات طلباتك ستظهر هنا.', 'New offers and updates on your orders will appear here.'),
                   ),
                 ),
               ])
